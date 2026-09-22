@@ -1,0 +1,28 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local application state and private source materials
+.private_backup/
+data/private/
+data/uploads/
+data/local/
+artifacts/
+*.sqlite
+*.sqlite3
+*.db
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Build outputs
+build/
+dist/
+*.egg-info/

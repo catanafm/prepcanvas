@@ -1,0 +1,271 @@
+{
+  "id": "sustainable-business-demo",
+  "name": "Sustainable Business Fundamentals",
+  "description": "A synthetic demo course about practical sustainability decisions in business.",
+  "target_score": 80,
+  "exam_date": null,
+  "materials": {
+    "workbook": true,
+    "practice_tests": true,
+    "sample_answers": true,
+    "notes": true,
+    "transcripts": false,
+    "other": false
+  },
+  "topics": [
+    {
+      "id": "systems-thinking",
+      "title": "Systems thinking",
+      "summary": "Systems thinking looks beyond isolated events and studies how actors, resources, incentives, and feedback loops influence one another over time.",
+      "key_concepts": ["system boundaries", "feedback loops", "unintended consequences"],
+      "worked_example": "A company replaces plastic packaging with heavier glass. Packaging waste falls, but transport emissions rise. A systems view evaluates both effects before declaring the change an improvement.",
+      "common_mistake": "Optimizing one visible metric while ignoring effects elsewhere in the system.",
+      "coach_question": "What could happen outside the boundary of the metric you are optimizing?",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Systems thinking"
+    },
+    {
+      "id": "stakeholder-value",
+      "title": "Stakeholder value",
+      "summary": "Stakeholder analysis identifies who affects or is affected by a decision, what each group values, and where interests align or conflict.",
+      "key_concepts": ["stakeholder mapping", "material interests", "trade-offs"],
+      "worked_example": "A supplier-code policy can reduce operational risk for a company while increasing compliance costs for small suppliers. The decision should account for both impact and influence.",
+      "common_mistake": "Treating every stakeholder as equally influential or assuming that influence and impact are the same.",
+      "coach_question": "Who carries the cost, who receives the benefit, and who can change the decision?",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Stakeholder value"
+    },
+    {
+      "id": "circular-economy",
+      "title": "Circular economy",
+      "summary": "A circular model aims to keep products and materials useful for longer through durability, repair, reuse, remanufacturing, and recycling.",
+      "key_concepts": ["design for durability", "reuse", "closed-loop materials"],
+      "worked_example": "A furniture company leases office chairs, repairs returned units, and reuses components. Revenue becomes service-based while material demand per customer falls.",
+      "common_mistake": "Equating circularity only with recycling at the end of a product's life.",
+      "coach_question": "How could the product retain value before recycling becomes necessary?",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Circular economy"
+    },
+    {
+      "id": "carbon-basics",
+      "title": "Carbon accounting basics",
+      "summary": "Carbon accounting groups emissions into direct operations, purchased energy, and value-chain emissions so an organization can locate its largest sources and choose relevant actions.",
+      "key_concepts": ["Scope 1", "Scope 2", "Scope 3"],
+      "worked_example": "Fuel burned in company vehicles is direct. Purchased electricity is energy-related. Emissions from suppliers and customer use sit in the wider value chain.",
+      "common_mistake": "Assuming the emissions a company controls directly are always its largest source.",
+      "coach_question": "Which emissions would disappear if the company stopped operating tomorrow, and which belong to its wider value chain?",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Carbon accounting basics"
+    }
+  ],
+  "questions": [
+    {
+      "id": "sys-1",
+      "topic_id": "systems-thinking",
+      "type": "multiple_choice",
+      "points": 1,
+      "prompt": "Which question best reflects systems thinking?",
+      "options": [
+        "Which department owns the problem?",
+        "How might this change create effects elsewhere over time?",
+        "Which metric is easiest to improve this quarter?",
+        "How can the decision be implemented fastest?"
+      ],
+      "correct_answer": "How might this change create effects elsewhere over time?",
+      "explanation": "Systems thinking examines relationships, delayed effects, and consequences beyond the immediately visible problem.",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Systems thinking"
+    },
+    {
+      "id": "sys-2",
+      "topic_id": "systems-thinking",
+      "type": "multiple_choice",
+      "points": 1,
+      "prompt": "A feedback loop exists when...",
+      "options": [
+        "an output of a system later influences that same system",
+        "two departments use the same dashboard",
+        "a decision has a single measurable outcome",
+        "a manager asks employees for comments"
+      ],
+      "correct_answer": "an output of a system later influences that same system",
+      "explanation": "A feedback loop occurs when a system's output returns as an input and changes future behavior.",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Systems thinking"
+    },
+    {
+      "id": "sys-3",
+      "topic_id": "systems-thinking",
+      "type": "short_answer",
+      "points": 2,
+      "prompt": "Why can improving one sustainability metric make the overall system worse?",
+      "model_answer": "The metric may use a narrow system boundary and ignore trade-offs or unintended consequences elsewhere.",
+      "rubric_points": [
+        {
+          "label": "Recognizes a narrow system boundary",
+          "points": 1,
+          "accepted_phrases": ["narrow boundary", "limited system boundary", "looks at only one part"],
+          "keywords": ["boundary", "narrow"],
+          "minimum_keyword_matches": 2
+        },
+        {
+          "label": "Recognizes trade-offs or unintended consequences",
+          "points": 1,
+          "accepted_phrases": ["unintended consequences", "creates trade-offs", "shifts the problem"],
+          "keywords": ["trade-offs", "consequences"],
+          "minimum_keyword_matches": 2
+        }
+      ],
+      "explanation": "A local improvement is not necessarily a system improvement. Check boundaries, trade-offs, and delayed effects.",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Systems thinking"
+    },
+    {
+      "id": "stake-1",
+      "topic_id": "stakeholder-value",
+      "type": "multiple_choice",
+      "points": 1,
+      "prompt": "Which pair is most useful when prioritizing stakeholders?",
+      "options": ["Age and location", "Impact and influence", "Revenue and headcount", "Urgency and job title"],
+      "correct_answer": "Impact and influence",
+      "explanation": "Impact shows how strongly a group is affected; influence shows how strongly it can affect the decision.",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Stakeholder value"
+    },
+    {
+      "id": "stake-2",
+      "topic_id": "stakeholder-value",
+      "type": "multiple_choice",
+      "points": 1,
+      "prompt": "A material stakeholder interest is one that...",
+      "options": ["appears in every annual report", "can meaningfully affect or be affected by the decision", "belongs to the largest group", "is easiest to quantify"],
+      "correct_answer": "can meaningfully affect or be affected by the decision",
+      "explanation": "Materiality is about decision relevance and significant effects, not convenience or group size alone.",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Stakeholder value"
+    },
+    {
+      "id": "stake-3",
+      "topic_id": "stakeholder-value",
+      "type": "short_answer",
+      "points": 2,
+      "prompt": "What two questions help distinguish stakeholder impact from stakeholder influence?",
+      "model_answer": "Ask how strongly the stakeholder is affected and how strongly the stakeholder can change the decision.",
+      "rubric_points": [
+        {
+          "label": "Asks how strongly the stakeholder is affected",
+          "points": 1,
+          "accepted_phrases": ["how are they affected", "impact on the stakeholder", "who carries the effect"],
+          "keywords": ["affected", "stakeholder"],
+          "minimum_keyword_matches": 2
+        },
+        {
+          "label": "Asks how strongly the stakeholder can affect the decision",
+          "points": 1,
+          "accepted_phrases": ["can change the decision", "influence the decision", "power over the outcome"],
+          "keywords": ["influence", "decision"],
+          "minimum_keyword_matches": 2
+        }
+      ],
+      "explanation": "Impact runs from the decision to the stakeholder; influence runs from the stakeholder to the decision.",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Stakeholder value"
+    },
+    {
+      "id": "circ-1",
+      "topic_id": "circular-economy",
+      "type": "multiple_choice",
+      "points": 1,
+      "prompt": "Which action usually preserves the most product value?",
+      "options": ["Disposal", "Material recycling", "Repair and reuse", "Energy recovery"],
+      "correct_answer": "Repair and reuse",
+      "explanation": "Repair and reuse preserve the product, its components, and the energy already invested in manufacturing.",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Circular economy"
+    },
+    {
+      "id": "circ-2",
+      "topic_id": "circular-economy",
+      "type": "multiple_choice",
+      "points": 1,
+      "prompt": "Which business model most directly supports product return and refurbishment?",
+      "options": ["One-time anonymous sale", "Product-as-a-service", "Seasonal discounting", "Cost-plus pricing"],
+      "correct_answer": "Product-as-a-service",
+      "explanation": "When the provider retains ownership, it has a direct incentive to recover, maintain, and refurbish products.",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Circular economy"
+    },
+    {
+      "id": "circ-3",
+      "topic_id": "circular-economy",
+      "type": "short_answer",
+      "points": 2,
+      "prompt": "Name two design choices that can keep a product useful for longer.",
+      "model_answer": "Examples include durable components and a modular design that makes repair or replacement easier.",
+      "rubric_points": [
+        {
+          "label": "Durability",
+          "points": 1,
+          "accepted_phrases": ["durable components", "design for durability", "long-lasting materials"],
+          "keywords": ["durable"],
+          "minimum_keyword_matches": 1
+        },
+        {
+          "label": "Repairability or modularity",
+          "points": 1,
+          "accepted_phrases": ["easy to repair", "modular design", "replaceable parts"],
+          "keywords": ["repair", "modular"],
+          "minimum_keyword_matches": 1
+        }
+      ],
+      "explanation": "Circular design delays disposal by preserving product and component value before recycling is needed.",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Circular economy"
+    },
+    {
+      "id": "carbon-1",
+      "topic_id": "carbon-basics",
+      "type": "multiple_choice",
+      "points": 1,
+      "prompt": "Fuel burned in company-owned delivery vans is usually classified as...",
+      "options": ["Scope 1", "Scope 2", "Scope 3", "Avoided emissions"],
+      "correct_answer": "Scope 1",
+      "explanation": "Scope 1 covers direct emissions from sources the organization owns or controls.",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Carbon accounting basics"
+    },
+    {
+      "id": "carbon-2",
+      "topic_id": "carbon-basics",
+      "type": "multiple_choice",
+      "points": 1,
+      "prompt": "Emissions associated with purchased electricity are usually...",
+      "options": ["Scope 1", "Scope 2", "Scope 3 only", "Outside the inventory"],
+      "correct_answer": "Scope 2",
+      "explanation": "Scope 2 covers indirect emissions from purchased electricity, steam, heating, or cooling.",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Carbon accounting basics"
+    },
+    {
+      "id": "carbon-3",
+      "topic_id": "carbon-basics",
+      "type": "short_answer",
+      "points": 3,
+      "prompt": "Briefly distinguish Scope 1, Scope 2, and Scope 3 emissions.",
+      "model_answer": "Scope 1 is direct operational emissions, Scope 2 is purchased energy, and Scope 3 covers other value-chain emissions.",
+      "rubric_points": [
+        {
+          "label": "Scope 1: direct emissions",
+          "points": 1,
+          "accepted_phrases": ["scope 1 is direct", "direct operational emissions"],
+          "keywords": ["scope", "1", "direct"],
+          "required_keywords": ["1"],
+          "minimum_keyword_matches": 3
+        },
+        {
+          "label": "Scope 2: purchased energy",
+          "points": 1,
+          "accepted_phrases": ["scope 2 is purchased energy", "purchased electricity"],
+          "keywords": ["scope", "2", "purchased", "energy"],
+          "required_keywords": ["2"],
+          "minimum_keyword_matches": 3
+        },
+        {
+          "label": "Scope 3: value-chain emissions",
+          "points": 1,
+          "accepted_phrases": ["scope 3 is value chain", "other value-chain emissions"],
+          "keywords": ["scope", "3", "value-chain"],
+          "required_keywords": ["3"],
+          "minimum_keyword_matches": 3
+        }
+      ],
+      "explanation": "The three scopes distinguish direct operations, purchased energy, and the wider value chain.",
+      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Carbon accounting basics"
+    }
+  ]
+}
