@@ -10,6 +10,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - Local-first Streamlit MVP with a synthetic demo subject, diagnostic coaching profiles, guided learning, targeted practice, a delayed-feedback mock exam, and transparent readiness tracking.
 - CI for tests and privacy checks on Python 3.9 and 3.11.
 
+### Changed
+
+- Readiness counts the latest answer per distinct question, weighs mock-exam answers 1.5×, and lets evidence decay with a 14-day half-life, so repeating one question can no longer inflate topic mastery. The topic map shows questions answered per topic (TASK-003).
+
 ### Fixed
 
 - Short-answer grading accepts inflected word forms, hyphen and spacing variants, number words, and "not only … but also", and no longer awards full credit to bare keyword lists (TASK-002).

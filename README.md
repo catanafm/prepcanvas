@@ -113,8 +113,9 @@ The bundled demo course is original synthetic content created specifically for t
 
 The current readiness score is deliberately simple and inspectable:
 
-- topic mastery is recency-weighted accuracy across up to five recent answered attempts;
-- mastery is multiplied by an evidence factor that reaches full strength after three attempts;
+- only the latest answer to each question counts, so repeating one question adds no extra evidence;
+- topic mastery is weighted accuracy across those answers, where mock-exam answers weigh 1.5× and every answer loses half its weight each 14 days;
+- mastery is multiplied by an evidence factor that reaches full strength after three distinct, recent questions in the topic;
 - overall readiness is the average topic mastery;
 - `Ready` requires both the target score and evidence across every topic;
 - the session estimate uses the larger of the remaining score gap and uncovered-topic gap.

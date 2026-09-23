@@ -45,3 +45,22 @@ def test_learning_sequence_uses_saved_coaching_strategy(tmp_path, monkeypatch):
     app = AppTest.from_file("app/streamlit_app.py", default_timeout=10).run()
     app.sidebar.radio[0].set_value("Learn").run()
     assert any("Active recall first" in info.value for info in app.info)
+
+
+def test_overview_counts_distinct_questions_per_topic(tmp_path, monkeypatch):
+    database = tmp_path / "evidence.sqlite3"
+    monkeypatch.setenv("PREPCANVAS_DB_PATH", str(database))
+    store = StudyStore(database)
+    subject = load_demo_subject()
+    store.seed_demo_subject(subject)
+    for _ in range(3):
+        store.save_attempt(
+            subject["id"],
+            "practice",
+            {"topic_id": "systems-thinking", "question_id": "sys-1", "score": 1, "max_score": 1},
+        )
+
+    app = AppTest.from_file("app/streamlit_app.py", default_timeout=10).run()
+    captions = [caption.value for caption in app.caption]
+    assert "1 of 3 questions answered" in captions
+    assert any("Systems thinking** · 33% mastery" in item.value for item in app.markdown)
