@@ -7,7 +7,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | ID | Title | Type | Priority | Status |
 |---|---|---|---|---|
 | [TASK-001](TASK-001-task-workflow.md) | Establish task board and contribution workflow | docs | high | done |
-| [TASK-002](TASK-002-robust-rubric-grading.md) | Make rubric grading robust to word forms and spelling variants | fix | high | backlog |
+| [TASK-002](TASK-002-robust-rubric-grading.md) | Make rubric grading robust to word forms and spelling variants | fix | high | done |
 | [TASK-003](TASK-003-readiness-evidence-quality.md) | Base readiness on distinct questions and recent, mode-weighted evidence | fix | high | backlog |
 | [TASK-004](TASK-004-subject-creation-feedback.md) | Show confirmation after creating a subject | fix | medium | backlog |
 | [TASK-005](TASK-005-honest-guidance-copy.md) | Make next-action and session estimate guidance accurate | fix | medium | backlog |
