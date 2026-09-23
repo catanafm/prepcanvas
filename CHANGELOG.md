@@ -4,13 +4,17 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-23
+
+First public release: a trustworthy, fully local demo of the study loop — diagnose, learn, practise, mock exam, and track readiness.
+
 ### Added
 
-- README screenshots, a phone layout screenshot, and a demo GIF, all generated reproducibly by `scripts/capture_media.py` from the synthetic demo (TASK-010).
-- Subjects can be managed from the Subjects page: reset progress for any subject, including the demo, or delete a user subject with all of its progress. Both actions require an explicit confirmation (TASK-007).
-- Task board, task template, contribution guide, and pull request template for a task-driven workflow (TASK-001).
 - Local-first Streamlit MVP with a synthetic demo subject, diagnostic coaching profiles, guided learning, targeted practice, a delayed-feedback mock exam, and transparent readiness tracking.
+- Subjects can be managed from the Subjects page: reset progress for any subject, including the demo, or delete a user subject with all of its progress. Both actions require an explicit confirmation (TASK-007).
+- README screenshots, a phone layout screenshot, and a demo GIF, all generated reproducibly by `scripts/capture_media.py` from the synthetic demo (TASK-010).
 - CI for tests and privacy checks on Python 3.9, 3.11, 3.12, and 3.13 (TASK-009).
+- Task board, task template, contribution guide, and pull request template for a task-driven workflow (TASK-001).
 
 ### Changed
 
@@ -28,3 +32,6 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Removed
 
 - `TODO.md`, replaced by the task board in `tasks/` (TASK-001).
+
+[Unreleased]: https://github.com/catanafm/prepcanvas/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/catanafm/prepcanvas/releases/tag/v0.1.0

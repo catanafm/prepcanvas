@@ -16,7 +16,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-007](TASK-007-subject-management.md) | Add subject deletion and progress reset | feature | medium | done |
 | [TASK-009](TASK-009-python-baseline.md) | Test supported Python versions and tidy packaging | chore | low | done |
 | [TASK-010](TASK-010-readme-media.md) | Add screenshots and a short demo GIF to the README | docs | medium | done |
-| [TASK-011](TASK-011-first-release.md) | Publish the first tagged release (v0.1.0) | chore | medium | backlog |
+| [TASK-011](TASK-011-first-release.md) | Publish the first tagged release (v0.1.0) | chore | medium | done |
 | [TASK-012](TASK-012-local-material-upload.md) | Upload local PDF, TXT, and Markdown materials | feature | medium | backlog |
 | [TASK-013](TASK-013-source-preview-classification.md) | Preview and classify sources before processing | feature | low | backlog |
 | [TASK-014](TASK-014-topic-map-citations.md) | Build a topic map with source citations | feature | low | backlog |
@@ -28,6 +28,6 @@ Tasks are listed in planned order. The test suite verifies that this board match
 
 ## Milestones
 
-- **v0.1.0 — Trustworthy demo:** TASK-002 → TASK-011
+- **v0.1.0 — Trustworthy demo:** TASK-002 → TASK-011 · released 2026-09-23
 - **v0.2.0 — Real subjects:** TASK-012 → TASK-015, TASK-019
 - **v0.3.0 — Optional AI:** TASK-016 → TASK-018
