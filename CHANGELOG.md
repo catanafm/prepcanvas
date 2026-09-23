@@ -10,6 +10,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - Local-first Streamlit MVP with a synthetic demo subject, diagnostic coaching profiles, guided learning, targeted practice, a delayed-feedback mock exam, and transparent readiness tracking.
 - CI for tests and privacy checks on Python 3.9 and 3.11.
 
+### Fixed
+
+- Short-answer grading accepts inflected word forms, hyphen and spacing variants, number words, and "not only … but also", and no longer awards full credit to bare keyword lists (TASK-002).
+
 ### Removed
 
 - `TODO.md`, replaced by the task board in `tasks/` (TASK-001).

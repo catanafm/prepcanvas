@@ -107,7 +107,7 @@
           "points": 1,
           "accepted_phrases": ["unintended consequences", "creates trade-offs", "shifts the problem"],
           "keywords": ["trade-offs", "consequences"],
-          "minimum_keyword_matches": 2
+          "minimum_keyword_matches": 1
         }
       ],
       "explanation": "A local improvement is not necessarily a system improvement. Check boundaries, trade-offs, and delayed effects.",
@@ -195,7 +195,7 @@
           "label": "Durability",
           "points": 1,
           "accepted_phrases": ["durable components", "design for durability", "long-lasting materials"],
-          "keywords": ["durable"],
+          "keywords": ["durable", "long-lasting"],
           "minimum_keyword_matches": 1
         },
         {
