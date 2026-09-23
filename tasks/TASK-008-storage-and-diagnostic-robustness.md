@@ -2,7 +2,7 @@
 id: TASK-008
 title: Close SQLite connections and guard content assumptions
 type: refactor
-status: backlog
+status: done
 priority: medium
 area: storage
 created: 2026-09-23
@@ -17,7 +17,11 @@ created: 2026-09-23
 
 ## Acceptance criteria
 
-- [ ] Connections are closed deterministically (context manager with `closing`)
-- [ ] Foreign key enforcement is enabled
-- [ ] Topics without a multiple-choice question are skipped by the diagnostic, with a test
-- [ ] Unknown topic or question IDs raise a descriptive `KeyError`
+- [x] Connections are closed deterministically (context manager with `closing`)
+- [x] Foreign key enforcement is enabled
+- [x] Topics without a multiple-choice question are skipped by the diagnostic, with a test
+- [x] Unknown topic or question IDs raise a descriptive `KeyError`
+
+## Notes
+
+Resolution: `StudyStore._connect` is a context manager that enables `PRAGMA foreign_keys`, commits on success, and always closes. Diagnostic question selection moved to `catalog.diagnostic_questions` so it can be unit tested. The unused `catalog.ROOT_DIR` was removed while touching the module (listed in TASK-009). The existing local database passes `PRAGMA foreign_key_check`.
