@@ -37,7 +37,7 @@ PrepCanvas brings those decisions into one local workspace.
 
 ## Quick start
 
-Requirements: Python 3.9+.
+Requirements: Python 3.9+; Python 3.12 is recommended. `setup.sh` picks the newest Python 3 it finds, or the one in `PYTHON_BIN`.
 
 ```bash
 ./scripts/setup.sh
