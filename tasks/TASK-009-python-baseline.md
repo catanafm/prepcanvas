@@ -1,8 +1,8 @@
 ---
 id: TASK-009
-title: Move to a supported Python baseline and tidy packaging
+title: Test supported Python versions and tidy packaging
 type: chore
-status: backlog
+status: done
 priority: low
 area: ci
 created: 2026-09-23
@@ -17,8 +17,14 @@ created: 2026-09-23
 
 ## Acceptance criteria
 
-- [ ] `requires-python = ">=3.11"`; CI matrix covers 3.11 and 3.12 (or newer)
-- [ ] `setup.sh` prefers a supported interpreter and explains how to install one
-- [ ] Build requirement is `setuptools>=77`
-- [ ] Scripts and CI install dev dependencies from one place
-- [ ] Unused code is removed
+- [x] CI matrix covers Python 3.9, 3.11, 3.12, and 3.13
+- [x] `setup.sh` prefers the newest available interpreter and recommends 3.12 when only an older one is found
+- [x] Build requirement is `setuptools>=77`
+- [x] Scripts and CI install dev dependencies from one place (`requirements.txt`), with a test that keeps its pins in sync with `pyproject.toml`
+- [x] Unused code is removed
+
+## Notes
+
+Decision (2026-09-23): the maintainer's machine only has Python 3.9, so the minimum stays at 3.9 for now and raising it to 3.11 moved to TASK-019. The original criterion `requires-python = ">=3.11"` was replaced by broader CI coverage.
+
+Resolution: interpreter selection lives in `scripts/_python.sh`, shared by `setup.sh` and `rebuild_venv.sh`; it skips Anaconda's `python3` in favour of the system interpreter unless `PYTHON_BIN` is set. Setup also upgrades pip inside `.venv`. `pyproject.toml` gains Python version classifiers.

@@ -9,10 +9,11 @@ All notable changes to this project are documented here. The format follows [Kee
 - Subjects can be managed from the Subjects page: reset progress for any subject, including the demo, or delete a user subject with all of its progress. Both actions require an explicit confirmation (TASK-007).
 - Task board, task template, contribution guide, and pull request template for a task-driven workflow (TASK-001).
 - Local-first Streamlit MVP with a synthetic demo subject, diagnostic coaching profiles, guided learning, targeted practice, a delayed-feedback mock exam, and transparent readiness tracking.
-- CI for tests and privacy checks on Python 3.9 and 3.11.
+- CI for tests and privacy checks on Python 3.9, 3.11, 3.12, and 3.13 (TASK-009).
 
 ### Changed
 
+- Setup scripts choose the newest available Python and recommend 3.12; development dependencies install from `requirements.txt` only, with a test that keeps its pins in sync with `pyproject.toml` (TASK-009).
 - Workspace navigation moved from the sidebar to wrapping pills above the content, so it stays reachable on phones; overview and progress metrics render as a responsive grid (four across on desktop, 2 × 2 on phones); the Streamlit developer toolbar is hidden (TASK-006).
 - Readiness counts the latest answer per distinct question, weighs mock-exam answers 1.5×, and lets evidence decay with a 14-day half-life, so repeating one question can no longer inflate topic mastery. The topic map shows questions answered per topic (TASK-003).
 

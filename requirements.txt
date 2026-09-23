@@ -1,2 +1,4 @@
+# Development environment used by scripts/setup.sh and CI.
+# Runtime dependencies are declared in pyproject.toml; keep the pins in sync.
 streamlit==1.50.0
 pytest==8.4.2
