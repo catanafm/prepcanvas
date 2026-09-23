@@ -64,3 +64,19 @@ def test_overview_counts_distinct_questions_per_topic(tmp_path, monkeypatch):
     captions = [caption.value for caption in app.caption]
     assert "1 of 3 questions answered" in captions
     assert any("Systems thinking** · 33% mastery" in item.value for item in app.markdown)
+
+
+def test_created_subject_is_confirmed_and_selected(tmp_path, monkeypatch):
+    monkeypatch.setenv("PREPCANVAS_DB_PATH", str(tmp_path / "create.sqlite3"))
+    app = AppTest.from_file("app/streamlit_app.py", default_timeout=10).run()
+    app.sidebar.radio[0].set_value("Subjects").run()
+    app.text_input[0].input("Statistics 101").run()
+    next(button for button in app.button if button.label == "Create subject").click().run()
+
+    assert len(app.exception) == 0
+    assert [toast.value for toast in app.toast] == ["Subject “Statistics 101” created and selected."]
+    assert app.sidebar.selectbox[0].value == "statistics-101"
+
+    app.sidebar.radio[0].set_value("Overview").run()
+    assert len(app.toast) == 0
+    assert app.sidebar.selectbox[0].value == "statistics-101"

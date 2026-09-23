@@ -16,6 +16,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- Creating a subject shows a confirmation and selects the new subject instead of discarding the message on rerun (TASK-004).
 - Short-answer grading accepts inflected word forms, hyphen and spacing variants, number words, and "not only … but also", and no longer awards full credit to bare keyword lists (TASK-002).
 
 ### Removed
