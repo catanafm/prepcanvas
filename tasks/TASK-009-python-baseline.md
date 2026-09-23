@@ -12,7 +12,7 @@ created: 2026-09-23
 
 - Python 3.9 reached end of life in October 2025; local setup defaults to the Command Line Tools interpreter.
 - `pyproject.toml` uses an SPDX `license = "MIT"` string, which requires `setuptools>=77`, but declares `setuptools>=68`.
-- `catalog.ROOT_DIR` is unused.
+- ~~`catalog.ROOT_DIR` is unused.~~ Removed in TASK-008.
 - Development dependencies are split between `requirements.txt`, the `dev` extra, and ad hoc `pip install pytest` in scripts.
 
 ## Acceptance criteria

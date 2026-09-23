@@ -14,6 +14,7 @@ SRC_DIR = ROOT_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
+from prepcanvas.catalog import diagnostic_questions as select_diagnostic_questions
 from prepcanvas.catalog import get_topic, load_demo_subject
 from prepcanvas.coaching import recommend_strategy
 from prepcanvas.grading import grade_question, grade_questions
@@ -205,13 +206,10 @@ if page == "Overview":
 elif page == "Diagnostic":
     st.title("Find your starting point")
     st.write("A short knowledge check plus your confidence level determines the first coaching strategy.")
-    if not subject["questions"]:
+    diagnostic_questions = select_diagnostic_questions(subject)
+    if not diagnostic_questions:
         st.info("Add content to this subject before running a diagnostic. The synthetic demo subject is ready to use.")
     else:
-        diagnostic_questions = [
-            next(q for q in subject["questions"] if q["topic_id"] == topic["id"] and q["type"] == "multiple_choice")
-            for topic in subject["topics"]
-        ]
         with st.form("diagnostic_form"):
             diagnostic_answers = {}
             for question in diagnostic_questions:
