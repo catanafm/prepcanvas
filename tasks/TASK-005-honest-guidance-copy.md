@@ -2,7 +2,7 @@
 id: TASK-005
 title: Make next-action and session estimate guidance accurate
 type: fix
-status: backlog
+status: done
 priority: medium
 area: ui
 created: 2026-09-23
@@ -16,7 +16,11 @@ created: 2026-09-23
 
 ## Acceptance criteria
 
-- [ ] No-profile state recommends the subject diagnostic without naming a topic
-- [ ] The session estimate is hidden or shown as a range until each topic has evidence
-- [ ] Metric labels are not truncated at 1280 px width
-- [ ] Tests cover the next-action text for no-evidence, partial, and ready states
+- [x] No-profile state recommends the subject diagnostic without naming a topic
+- [x] The session estimate is hidden or shown as a range until each topic has evidence
+- [x] Metric labels are not truncated at 1280 px width
+- [x] Tests cover the next-action text for no-evidence, partial, and ready states
+
+## Notes
+
+Resolution: `estimated_sessions` is `None` until coverage is 100%, then `ceil((target − readiness) / 8)`; the overview shows "—" with an explanatory tooltip. The metric is labelled "Est. sessions". The next best action now has four states: no evidence → diagnostic, partial coverage → first unanswered topic, full coverage → weakest topic, ready → mock exam.

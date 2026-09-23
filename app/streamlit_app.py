@@ -160,8 +160,15 @@ if page == "Overview":
     col1.metric("Readiness", f'{readiness["score"]}%')
     col2.metric("Topic coverage", f'{readiness["coverage"]}%')
     col3.metric("Target", f'{readiness["target"]}%')
-    session_value = "Ready" if readiness["is_ready"] else f'≈ {readiness["estimated_sessions"]}'
-    col4.metric("Focused sessions", session_value, help="A rough heuristic, not a guarantee.")
+    if readiness["is_ready"]:
+        session_value, session_help = "Ready", "Target reached with evidence in every topic."
+    elif readiness["estimated_sessions"] is None:
+        session_value = "—"
+        session_help = "Answer at least one question in every topic to get an estimate."
+    else:
+        session_value = f'≈ {readiness["estimated_sessions"]}'
+        session_help = "A rough heuristic, not a guarantee."
+    col4.metric("Est. sessions", session_value, help=session_help)
 
     st.markdown(
         f'<div class="next-action"><b>Next best action</b><br>{escape(next_best_action(subject, readiness))}</div>',

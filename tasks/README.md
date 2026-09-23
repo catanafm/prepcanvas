@@ -10,7 +10,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-002](TASK-002-robust-rubric-grading.md) | Make rubric grading robust to word forms and spelling variants | fix | high | done |
 | [TASK-003](TASK-003-readiness-evidence-quality.md) | Base readiness on distinct questions and recent, mode-weighted evidence | fix | high | done |
 | [TASK-004](TASK-004-subject-creation-feedback.md) | Show confirmation after creating a subject | fix | medium | done |
-| [TASK-005](TASK-005-honest-guidance-copy.md) | Make next-action and session estimate guidance accurate | fix | medium | backlog |
+| [TASK-005](TASK-005-honest-guidance-copy.md) | Make next-action and session estimate guidance accurate | fix | medium | done |
 | [TASK-008](TASK-008-storage-and-diagnostic-robustness.md) | Close SQLite connections and guard content assumptions | refactor | medium | backlog |
 | [TASK-006](TASK-006-responsive-layout.md) | Complete visual QA and improve the mobile layout | feature | medium | backlog |
 | [TASK-007](TASK-007-subject-management.md) | Add subject deletion and progress reset | feature | medium | backlog |

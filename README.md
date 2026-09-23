@@ -24,7 +24,7 @@ PrepCanvas brings those decisions into one local workspace.
 - targeted practice with immediate, source-labelled feedback
 - mock exam with delayed feedback
 - SQLite progress storage isolated by subject
-- transparent readiness, coverage, and focused-session estimates
+- transparent readiness, coverage, and study-session estimates
 - no API key required
 
 ## Product principles
@@ -118,9 +118,9 @@ The current readiness score is deliberately simple and inspectable:
 - mastery is multiplied by an evidence factor that reaches full strength after three distinct, recent questions in the topic;
 - overall readiness is the average topic mastery;
 - `Ready` requires both the target score and evidence across every topic;
-- the session estimate uses the larger of the remaining score gap and uncovered-topic gap.
+- the session estimate appears only once every topic has evidence and assumes roughly eight readiness points per focused session.
 
-The focused-session estimate is a planning aid, not a prediction guarantee. A later iteration will validate the model against repeated mock-exam performance.
+The session estimate is a planning aid, not a prediction guarantee. A later iteration will validate the model against repeated mock-exam performance.
 
 ## Roadmap
 
