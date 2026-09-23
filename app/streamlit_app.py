@@ -119,12 +119,20 @@ def render_feedback(question: dict, result: dict):
 records = store.list_subjects()
 subject_lookup = {item["id"]: item for item in records}
 
+# Widget state can only be set before the widget renders, so actions that
+# finish with st.rerun() leave their follow-up here for the next run.
+if "select_subject" in st.session_state:
+    st.session_state["subject_id"] = st.session_state.pop("select_subject")
+if "flash" in st.session_state:
+    st.toast(st.session_state.pop("flash"), icon="✅")
+
 st.sidebar.markdown("## ◉ PrepCanvas")
 st.sidebar.caption("Local-first exam preparation")
 selected_id = st.sidebar.selectbox(
     "Subject",
     options=list(subject_lookup),
     format_func=lambda value: subject_lookup[value]["name"],
+    key="subject_id",
 )
 page = st.sidebar.radio(
     "Workspace",
@@ -405,7 +413,8 @@ else:
                     target_score,
                     materials,
                 )
-                st.success("Subject created. Select it from the sidebar.")
+                st.session_state["select_subject"] = subject_id
+                st.session_state["flash"] = f"Subject “{cleaned_name}” created and selected."
                 st.rerun()
             except sqlite3.IntegrityError:
                 st.error("Could not create the subject because its identifier already exists. Try again.")
