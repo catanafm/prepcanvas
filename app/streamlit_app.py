@@ -165,10 +165,10 @@ if page == "Overview":
         if not subject["topics"]:
             st.info("This subject is ready for materials, but content ingestion is not part of the first public demo yet.")
         for topic in subject["topics"]:
-            mastery = readiness["topics"].get(topic["id"], {"mastery": 0, "evidence": 0})
+            mastery = readiness["topics"][topic["id"]]
             st.markdown(f"**{escape(topic['title'])}** · {mastery['mastery']}% mastery")
             st.progress(mastery["mastery"] / 100)
-            st.caption(f'{mastery["evidence"]} recent evidence points')
+            st.caption(f'{mastery["evidence"]} of {mastery["questions"]} questions answered')
     with right:
         st.subheader("Coaching setup")
         if profile:

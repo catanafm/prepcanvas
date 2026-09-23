@@ -44,7 +44,13 @@ Before matching, words are normalized: number words become digits, hyphenated te
 
 ## Readiness heuristic
 
-For each topic, PrepCanvas weights newer answered attempts more strongly, uses up to five recent results, and applies an evidence factor that reaches 100% after three attempts. Overall readiness is the mean of topic mastery. A subject is marked ready only when the target score is reached and every topic has evidence.
+For each topic, PrepCanvas keeps only the latest answered attempt per question. Each of those answers has a freshness of `0.5 ^ (age in days / 14)` and a weight of freshness × mode weight, where mock-exam answers count 1.5× and every other mode 1×.
+
+- **Accuracy** is the weighted mean of the score ratios.
+- **Evidence factor** is the sum of freshness divided by the number of questions required for the topic (three, or fewer when the topic has fewer questions), capped at 1. Repeating one question therefore cannot exceed one third, and a topic not practised for two weeks drops to half.
+- **Topic mastery** is accuracy × evidence factor.
+
+Overall readiness is the mean of topic mastery. A subject is marked ready only when the target score is reached and every topic has evidence.
 
 ## Planned ingestion boundary
 
