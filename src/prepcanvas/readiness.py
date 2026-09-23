@@ -77,10 +77,14 @@ def calculate_readiness(subject: dict, attempts: list, now: datetime = None) -> 
     covered = sum(1 for item in topic_scores.values() if item["evidence"])
     coverage = round((covered / len(topic_ids)) * 100) if topic_ids else 0
     target = int(subject.get("target_score", 80))
-    score_sessions = ceil(max(0, target - readiness) / 8)
-    coverage_sessions = ceil(max(0, 100 - coverage) / 25)
     is_ready = readiness >= target and coverage == 100
-    estimated_sessions = 0 if is_ready else max(1, score_sessions, coverage_sessions)
+    # Without evidence in every topic the estimate would be a guess, so it stays unset.
+    if is_ready:
+        estimated_sessions = 0
+    elif coverage < 100:
+        estimated_sessions = None
+    else:
+        estimated_sessions = max(1, ceil((target - readiness) / 8))
     return {
         "score": readiness,
         "coverage": coverage,
@@ -94,11 +98,13 @@ def calculate_readiness(subject: dict, attempts: list, now: datetime = None) -> 
 def next_best_action(subject: dict, readiness: dict) -> str:
     if not subject.get("topics"):
         return "Add study materials to create a topic map."
-    weakest = min(
-        subject["topics"],
-        key=lambda topic: readiness["topics"].get(topic["id"], {}).get("mastery", 0),
-    )
-    evidence = readiness["topics"].get(weakest["id"], {}).get("evidence", 0)
-    if evidence == 0:
-        return f'Start the diagnostic check for “{weakest["title"]}”.'
+    if not readiness["coverage"]:
+        return "Take the short diagnostic to find your starting point across all topics."
+    if readiness["is_ready"]:
+        return "You have reached your target. Take a mock exam to confirm it under exam conditions."
+    topics = readiness["topics"]
+    unanswered = next((topic for topic in subject["topics"] if not topics[topic["id"]]["evidence"]), None)
+    if unanswered:
+        return f'Practise “{unanswered["title"]}”: it has no answers yet.'
+    weakest = min(subject["topics"], key=lambda topic: topics[topic["id"]]["mastery"])
     return f'Review “{weakest["title"]}” and complete a short recall session.'

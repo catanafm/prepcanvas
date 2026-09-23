@@ -22,7 +22,7 @@ def test_no_evidence_means_zero_readiness(demo_subject):
     result = calculate_readiness(demo_subject, [], now=NOW)
     assert result["score"] == 0
     assert result["coverage"] == 0
-    assert result["estimated_sessions"] > 0
+    assert result["estimated_sessions"] is None
 
 
 def test_full_mastery_requires_distinct_questions(demo_subject):
@@ -63,9 +63,54 @@ def test_old_evidence_decays(demo_subject):
     assert calculate_readiness(demo_subject, stale, now=NOW)["topics"]["systems-thinking"]["mastery"] == 50
 
 
-def test_next_action_targets_a_topic_without_evidence(demo_subject):
+def all_questions(demo_subject, score_ratio=1.0):
+    return [
+        attempt(question["id"], topic_id=question["topic_id"], score=question["points"] * score_ratio,
+                max_score=question["points"])
+        for question in demo_subject["questions"]
+    ]
+
+
+def test_estimate_appears_once_every_topic_has_evidence(demo_subject):
+    result = calculate_readiness(demo_subject, all_questions(demo_subject, score_ratio=0.5), now=NOW)
+    assert result["coverage"] == 100
+    assert result["score"] == 50
+    assert result["estimated_sessions"] == 4
+
+
+def test_ready_subject_needs_no_more_sessions(demo_subject):
+    result = calculate_readiness(demo_subject, all_questions(demo_subject), now=NOW)
+    assert result["is_ready"] is True
+    assert result["estimated_sessions"] == 0
+
+
+def test_next_action_without_evidence_recommends_the_subject_diagnostic(demo_subject):
     readiness = calculate_readiness(demo_subject, [], now=NOW)
-    assert "diagnostic" in next_best_action(demo_subject, readiness).lower()
+    action = next_best_action(demo_subject, readiness)
+    assert action == "Take the short diagnostic to find your starting point across all topics."
+    assert not any(topic["title"] in action for topic in demo_subject["topics"])
+
+
+def test_next_action_with_partial_coverage_points_to_an_unanswered_topic(demo_subject):
+    readiness = calculate_readiness(demo_subject, [attempt("sys-1")], now=NOW)
+    assert next_best_action(demo_subject, readiness) == "Practise “Stakeholder value”: it has no answers yet."
+
+
+def test_next_action_with_full_coverage_reviews_the_weakest_topic(demo_subject):
+    demo_subject["target_score"] = 100
+    attempts = all_questions(demo_subject)
+    attempts[0] = {**attempts[0], "score": 0}
+    readiness = calculate_readiness(demo_subject, attempts, now=NOW)
+    weakest = next(topic for topic in demo_subject["topics"] if topic["id"] == attempts[0]["topic_id"])
+    assert readiness["is_ready"] is False
+    assert next_best_action(demo_subject, readiness) == (
+        f'Review “{weakest["title"]}” and complete a short recall session.'
+    )
+
+
+def test_next_action_when_ready_suggests_a_mock_exam(demo_subject):
+    readiness = calculate_readiness(demo_subject, all_questions(demo_subject), now=NOW)
+    assert "mock exam" in next_best_action(demo_subject, readiness)
 
 
 def test_blank_attempt_does_not_increase_coverage(demo_subject):
@@ -85,7 +130,7 @@ def test_ready_requires_coverage_across_every_topic(demo_subject):
     assert result["score"] == 50
     assert result["coverage"] == 50
     assert result["is_ready"] is False
-    assert result["estimated_sessions"] > 0
+    assert result["estimated_sessions"] is None
 
 
 def test_timestamps_without_timezone_are_treated_as_utc(demo_subject):
