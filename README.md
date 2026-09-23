@@ -66,6 +66,9 @@ PYTHONPATH=src streamlit run app/streamlit_app.py
 ## Repository structure
 
 ```text
+.github/
+  workflows/ci.yml        Tests and privacy checks
+  pull_request_template.md
 app/
   streamlit_app.py        Streamlit user interface
 docs/
@@ -80,6 +83,7 @@ src/prepcanvas/
   grading.py              Deterministic grading
   readiness.py            Readiness heuristics
   storage.py              SQLite persistence
+tasks/                    Task board and task files (TASK-NNN)
 tests/
 ```
 
@@ -121,7 +125,17 @@ The focused-session estimate is a planning aid, not a prediction guarantee. A la
 
 Near-term work includes source upload and ingestion, richer topic diagnostics, spaced review, a more polished visual system, and exportable progress summaries. Optional local and cloud AI providers are planned after the deterministic workflow is reliable. Voice practice remains an exploratory future feature.
 
-See [docs/roadmap.md](docs/roadmap.md) for the staged plan.
+See [docs/roadmap.md](docs/roadmap.md) for the staged plan and the [task board](tasks/README.md) for the concrete, prioritized backlog.
+
+## Development workflow
+
+Work is planned and delivered as numbered tasks:
+
+1. Each change starts as a task file in [`tasks/`](tasks/) with context, evidence, and acceptance criteria.
+2. It is implemented on a `task/TASK-NNN-short-slug` branch with [Conventional Commits](https://www.conventionalcommits.org/) that reference the task ID.
+3. It is merged through a pull request that follows a shared definition of done and is recorded in [CHANGELOG.md](CHANGELOG.md).
+
+The test suite also checks that the task board stays consistent with the task files. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## AI-assisted development
 
