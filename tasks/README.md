@@ -13,7 +13,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-005](TASK-005-honest-guidance-copy.md) | Make next-action and session estimate guidance accurate | fix | medium | done |
 | [TASK-008](TASK-008-storage-and-diagnostic-robustness.md) | Close SQLite connections and guard content assumptions | refactor | medium | done |
 | [TASK-006](TASK-006-responsive-layout.md) | Complete visual QA and improve the mobile layout | feature | medium | done |
-| [TASK-007](TASK-007-subject-management.md) | Add subject deletion and progress reset | feature | medium | backlog |
+| [TASK-007](TASK-007-subject-management.md) | Add subject deletion and progress reset | feature | medium | done |
 | [TASK-009](TASK-009-python-baseline.md) | Move to a supported Python baseline and tidy packaging | chore | low | backlog |
 | [TASK-010](TASK-010-readme-media.md) | Add screenshots and a short demo GIF to the README | docs | medium | backlog |
 | [TASK-011](TASK-011-first-release.md) | Publish the first tagged release (v0.1.0) | chore | medium | backlog |

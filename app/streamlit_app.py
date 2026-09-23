@@ -467,3 +467,22 @@ else:
         st.markdown(f'**{item["name"]}**{demo_label}')
         selected_materials = [material_label(key) for key, value in item["materials"].items() if value]
         st.caption(", ".join(selected_materials) or "No materials selected")
+        with st.expander("Manage subject"):
+            removes = "its saved answers and coaching profile" if item["is_demo"] else "the subject and all of its progress"
+            confirmed = st.checkbox(
+                f"I understand this permanently removes {removes}.",
+                key=f'confirm_{item["id"]}',
+            )
+            reset_column, delete_column = st.columns(2)
+            if reset_column.button("Reset progress", key=f'reset_{item["id"]}', disabled=not confirmed):
+                store.reset_progress(item["id"])
+                st.session_state["flash"] = f'Progress for “{item["name"]}” was reset.'
+                st.rerun()
+            if not item["is_demo"] and delete_column.button(
+                "Delete subject", key=f'delete_{item["id"]}', type="primary", disabled=not confirmed
+            ):
+                store.delete_subject(item["id"])
+                if selected_id == item["id"]:
+                    st.session_state["select_subject"] = demo["id"]
+                st.session_state["flash"] = f'Subject “{item["name"]}” was deleted.'
+                st.rerun()
