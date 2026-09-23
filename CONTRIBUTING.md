@@ -75,3 +75,13 @@ A task is done when:
 ```
 
 Use `PREPCANVAS_DB_PATH=/tmp/prepcanvas-dev.sqlite3` when experimenting so your real study progress stays untouched.
+
+### README media
+
+Screenshots and the demo GIF in `docs/media/` are generated, not hand-made. After a visible UI change, regenerate them:
+
+```bash
+.venv/bin/python scripts/capture_media.py
+```
+
+The script starts the app on a temporary database with synthetic progress and drives headless Google Chrome (set `CHROME_PATH` if it is not in the default location).

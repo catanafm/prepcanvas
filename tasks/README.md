@@ -15,7 +15,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-006](TASK-006-responsive-layout.md) | Complete visual QA and improve the mobile layout | feature | medium | done |
 | [TASK-007](TASK-007-subject-management.md) | Add subject deletion and progress reset | feature | medium | done |
 | [TASK-009](TASK-009-python-baseline.md) | Test supported Python versions and tidy packaging | chore | low | done |
-| [TASK-010](TASK-010-readme-media.md) | Add screenshots and a short demo GIF to the README | docs | medium | backlog |
+| [TASK-010](TASK-010-readme-media.md) | Add screenshots and a short demo GIF to the README | docs | medium | done |
 | [TASK-011](TASK-011-first-release.md) | Publish the first tagged release (v0.1.0) | chore | medium | backlog |
 | [TASK-012](TASK-012-local-material-upload.md) | Upload local PDF, TXT, and Markdown materials | feature | medium | backlog |
 | [TASK-013](TASK-013-source-preview-classification.md) | Preview and classify sources before processing | feature | low | backlog |
