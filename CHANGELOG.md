@@ -12,6 +12,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Workspace navigation moved from the sidebar to wrapping pills above the content, so it stays reachable on phones; overview and progress metrics render as a responsive grid (four across on desktop, 2 × 2 on phones); the Streamlit developer toolbar is hidden (TASK-006).
 - Readiness counts the latest answer per distinct question, weighs mock-exam answers 1.5×, and lets evidence decay with a 14-day half-life, so repeating one question can no longer inflate topic mastery. The topic map shows questions answered per topic (TASK-003).
 
 ### Fixed
