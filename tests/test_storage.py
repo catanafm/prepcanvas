@@ -75,3 +75,49 @@ def test_attempts_require_an_existing_subject(tmp_path):
     store = StudyStore(tmp_path / "progress.sqlite3")
     with pytest.raises(sqlite3.IntegrityError):
         store.save_attempt("missing-subject", "practice", {"score": 1, "max_score": 1})
+
+
+def seed_progress(store, subject_id):
+    store.save_attempt(subject_id, "practice", {"topic_id": "t", "question_id": "q", "score": 1, "max_score": 1})
+    store.save_profile(subject_id, {"id": "guided", "name": "Guided", "description": "Examples."}, 0.3, 2)
+
+
+def test_reset_progress_keeps_the_subject_and_other_subjects(tmp_path, demo_subject):
+    store = StudyStore(tmp_path / "progress.sqlite3")
+    store.seed_demo_subject(demo_subject)
+    store.create_subject("other", "Other subject", "", 75, {})
+    seed_progress(store, demo_subject["id"])
+    seed_progress(store, "other")
+
+    store.reset_progress(demo_subject["id"])
+
+    assert store.get_subject(demo_subject["id"]) is not None
+    assert store.list_attempts(demo_subject["id"]) == []
+    assert store.get_profile(demo_subject["id"]) is None
+    assert len(store.list_attempts("other")) == 1
+    assert store.get_profile("other") is not None
+
+
+def test_delete_subject_removes_its_progress(tmp_path):
+    store = StudyStore(tmp_path / "progress.sqlite3")
+    store.create_subject("other", "Other subject", "", 75, {})
+    seed_progress(store, "other")
+
+    store.delete_subject("other")
+
+    assert store.get_subject("other") is None
+    assert store.list_attempts("other") == []
+    assert store.get_profile("other") is None
+
+
+def test_demo_subject_cannot_be_deleted(tmp_path, demo_subject):
+    store = StudyStore(tmp_path / "progress.sqlite3")
+    store.seed_demo_subject(demo_subject)
+    with pytest.raises(ValueError):
+        store.delete_subject(demo_subject["id"])
+    assert store.get_subject(demo_subject["id"]) is not None
+
+
+def test_deleting_an_unknown_subject_raises(tmp_path):
+    with pytest.raises(KeyError):
+        StudyStore(tmp_path / "progress.sqlite3").delete_subject("missing")

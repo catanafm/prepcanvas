@@ -132,6 +132,24 @@ class StudyStore:
         item["is_demo"] = bool(item["is_demo"])
         return item
 
+    def reset_progress(self, subject_id: str):
+        """Remove every saved answer and the coaching profile for a subject."""
+        with self._connect() as connection:
+            connection.execute("DELETE FROM attempts WHERE subject_id = ?", (subject_id,))
+            connection.execute("DELETE FROM coaching_profiles WHERE subject_id = ?", (subject_id,))
+
+    def delete_subject(self, subject_id: str):
+        """Delete a user subject together with its progress. The demo subject is protected."""
+        subject = self.get_subject(subject_id)
+        if subject is None:
+            raise KeyError(f"Unknown subject '{subject_id}'")
+        if subject["is_demo"]:
+            raise ValueError("The demo subject cannot be deleted; reset its progress instead.")
+        with self._connect() as connection:
+            connection.execute("DELETE FROM attempts WHERE subject_id = ?", (subject_id,))
+            connection.execute("DELETE FROM coaching_profiles WHERE subject_id = ?", (subject_id,))
+            connection.execute("DELETE FROM subjects WHERE id = ?", (subject_id,))
+
     def save_attempt(self, subject_id: str, mode: str, result: dict, confidence=None):
         with self._connect() as connection:
             connection.execute(
