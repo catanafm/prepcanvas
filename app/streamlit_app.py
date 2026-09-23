@@ -32,7 +32,24 @@ st.markdown(
     [data-testid="stSidebar"] { background: #17211b; }
     [data-testid="stSidebar"] * { color: #f7faf7 !important; }
     [data-testid="stSidebar"] div[data-baseweb="select"] * { color: #17211b !important; }
-    [data-testid="stMetric"] { background:white; border:1px solid #e1e8e3; padding:1rem; border-radius:16px; }
+    .st-key-page [role="radiogroup"] { gap:.4rem; flex-wrap:wrap; margin-bottom:.5rem; }
+    .st-key-page label[data-baseweb="radio"] { margin:0; padding:.35rem .9rem; border:1px solid #d5e1d9; border-radius:999px; background:white; cursor:pointer; }
+    .st-key-page label[data-baseweb="radio"] > div:first-child { display:none; }
+    .st-key-page label[data-baseweb="radio"]:has(input:checked) { background:var(--accent); border-color:var(--accent); }
+    .st-key-page label[data-baseweb="radio"]:has(input:checked) p { color:white; }
+    .metrics { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:.75rem; margin:0 0 1rem; }
+    .metrics.three { grid-template-columns:repeat(3, minmax(0, 1fr)); }
+    .metric { background:white; border:1px solid #e1e8e3; padding:.9rem 1rem; border-radius:16px; min-width:0; }
+    .metric .label { color:var(--muted); font-size:.85rem; }
+    .metric .value { font-size:2rem; line-height:1.2; margin-top:.2rem; }
+    .metric .hint { color:var(--muted); font-size:.75rem; margin-top:.3rem; }
+    @media (max-width: 640px) {
+      .metrics, .metrics.three { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.5rem; }
+      .metric { padding:.7rem .8rem; }
+      .metric .value { font-size:1.5rem; }
+      .hero { padding:1.2rem 1.25rem; }
+      .hero h1 { font-size:1.8rem; }
+    }
     .hero { padding:1.6rem 1.8rem; border-radius:24px; color:white; background:linear-gradient(125deg,#183f2d,#4d8064); margin-bottom:1.2rem; }
     .hero h1 { margin:0; font-size:2.5rem; }
     .hero p { max-width:720px; color:#e5f0e9; font-size:1.05rem; }
@@ -78,6 +95,20 @@ def material_label(key: str) -> str:
 
 def render_source(source: str):
     st.markdown(f'<div class="source">Source: {escape(source)}</div>', unsafe_allow_html=True)
+
+
+def render_metrics(items: list):
+    """Render metric cards as a grid: one row on desktop, two columns on phones."""
+    cards = "".join(
+        '<div class="metric">'
+        f'<div class="label">{escape(label)}</div>'
+        f'<div class="value">{escape(str(value))}</div>'
+        + (f'<div class="hint">{escape(hint)}</div>' if hint else "")
+        + "</div>"
+        for label, value, hint in items
+    )
+    layout = "metrics three" if len(items) == 3 else "metrics"
+    st.markdown(f'<div class="{layout}">{cards}</div>', unsafe_allow_html=True)
 
 
 def render_topic_explanation(topic: dict, expandable_trap: bool = True):
@@ -135,10 +166,12 @@ selected_id = st.sidebar.selectbox(
     format_func=lambda value: subject_lookup[value]["name"],
     key="subject_id",
 )
-page = st.sidebar.radio(
-    "Workspace",
-    ["Overview", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Subjects"],
-)
+PAGES = ["Overview", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Subjects"]
+
+
+# The workspace switcher sits above the content so it stays reachable on
+# phones, where Streamlit collapses the sidebar.
+page = st.radio("Workspace", PAGES, key="page", horizontal=True, label_visibility="collapsed")
 
 subject = merged_subject(subject_lookup[selected_id])
 attempts = store.list_attempts(selected_id)
@@ -157,19 +190,20 @@ if page == "Overview":
         """,
         unsafe_allow_html=True,
     )
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Readiness", f'{readiness["score"]}%')
-    col2.metric("Topic coverage", f'{readiness["coverage"]}%')
-    col3.metric("Target", f'{readiness["target"]}%')
     if readiness["is_ready"]:
-        session_value, session_help = "Ready", "Target reached with evidence in every topic."
+        session_value, session_help = "Ready", "Target reached"
     elif readiness["estimated_sessions"] is None:
-        session_value = "—"
-        session_help = "Answer at least one question in every topic to get an estimate."
+        session_value, session_help = "—", "Answer every topic first"
     else:
-        session_value = f'≈ {readiness["estimated_sessions"]}'
-        session_help = "A rough heuristic, not a guarantee."
-    col4.metric("Est. sessions", session_value, help=session_help)
+        session_value, session_help = f'≈ {readiness["estimated_sessions"]}', "Rough heuristic"
+    render_metrics(
+        [
+            ("Readiness", f'{readiness["score"]}%', None),
+            ("Topic coverage", f'{readiness["coverage"]}%', None),
+            ("Target", f'{readiness["target"]}%', None),
+            ("Est. sessions", session_value, session_help),
+        ]
+    )
 
     st.markdown(
         f'<div class="next-action"><b>Next best action</b><br>{escape(next_best_action(subject, readiness))}</div>',
@@ -361,10 +395,13 @@ elif page == "Progress":
     if not attempts:
         st.info("Complete the diagnostic or a practice question to start tracking progress.")
     else:
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Readiness", f'{readiness["score"]}%')
-        col2.metric("Coverage", f'{readiness["coverage"]}%')
-        col3.metric("Saved answers", len(attempts))
+        render_metrics(
+            [
+                ("Readiness", f'{readiness["score"]}%', None),
+                ("Coverage", f'{readiness["coverage"]}%', None),
+                ("Saved answers", len(attempts), None),
+            ]
+        )
         chart_data = {
             topic["title"]: readiness["topics"].get(topic["id"], {}).get("mastery", 0)
             for topic in subject["topics"]
