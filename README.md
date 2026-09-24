@@ -32,6 +32,7 @@ PrepCanvas brings those decisions into one local workspace.
 
 ## Current MVP
 
+- subject library with in-progress and completed subjects, exam countdowns, and progress at a glance
 - multi-subject local workspace for metadata and progress isolation
 - material inventory for each subject
 - synthetic demo course with four topics and twelve questions
@@ -96,6 +97,7 @@ docs/
 src/prepcanvas/
   demo_data/              Synthetic source and derived demo dataset
   catalog.py              Demo content loading
+  library.py              Library screen helpers
   coaching.py             Diagnostic-to-strategy rules
   grading.py              Deterministic grading
   readiness.py            Readiness heuristics

@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- A subject library home screen: welcome, *In progress* and *Completed* groups, a *+ New subject* card, and per-subject cards with exam countdown, last activity, readiness, and coverage. Subjects can be marked as completed and reopened (TASK-023).
+
+### Changed
+
+- The sidebar subject dropdown is replaced by the library; inside a subject, *← All subjects* returns home and the *Subjects* tab became per-subject *Settings* (TASK-023).
+
 ## [0.1.1] - 2026-09-24
 
 Presentation polish: every screen reviewed at desktop and phone widths, clearer progress history, and a fuller README walkthrough.

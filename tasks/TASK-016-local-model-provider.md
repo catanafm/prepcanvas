@@ -14,3 +14,7 @@ created: 2026-09-23
 - [ ] A local-model adapter implements it
 - [ ] The app remains fully functional with no provider configured
 - [ ] Outputs include source citations and are validated before display
+
+## Notes
+
+Decision (2026-09-24): ingestion is deterministic and local first (TASK-012 → TASK-014, TASK-026). A local model via Ollama may later add summaries and rubric suggestions; content still comes from the learner's own files and no material leaves the machine.

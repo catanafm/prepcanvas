@@ -5,6 +5,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
+SUBJECT_STATUSES = ("active", "completed")
+
+
 class StudyStore:
     def __init__(self, path: Path):
         self.path = Path(path)
@@ -72,6 +75,14 @@ class StudyStore:
                 connection.execute(
                     "ALTER TABLE attempts ADD COLUMN is_answered INTEGER NOT NULL DEFAULT 1"
                 )
+            subject_columns = {
+                row[1]
+                for row in connection.execute("PRAGMA table_info(subjects)").fetchall()
+            }
+            if "status" not in subject_columns:
+                connection.execute(
+                    "ALTER TABLE subjects ADD COLUMN status TEXT NOT NULL DEFAULT 'active'"
+                )
 
     @staticmethod
     def _now() -> str:
@@ -131,6 +142,17 @@ class StudyStore:
         item["materials"] = json.loads(item.pop("materials_json"))
         item["is_demo"] = bool(item["is_demo"])
         return item
+
+    def set_status(self, subject_id: str, status: str):
+        """Mark a subject as `active` (in progress) or `completed`."""
+        if status not in SUBJECT_STATUSES:
+            raise ValueError(f"Unknown subject status '{status}'")
+        with self._connect() as connection:
+            updated = connection.execute(
+                "UPDATE subjects SET status = ? WHERE id = ?", (status, subject_id)
+            ).rowcount
+        if not updated:
+            raise KeyError(f"Unknown subject '{subject_id}'")
 
     def reset_progress(self, subject_id: str):
         """Remove every saved answer and the coaching profile for a subject."""

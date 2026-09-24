@@ -121,3 +121,35 @@ def test_demo_subject_cannot_be_deleted(tmp_path, demo_subject):
 def test_deleting_an_unknown_subject_raises(tmp_path):
     with pytest.raises(KeyError):
         StudyStore(tmp_path / "progress.sqlite3").delete_subject("missing")
+
+
+def test_subjects_start_active_and_can_be_completed(tmp_path):
+    store = StudyStore(tmp_path / "progress.sqlite3")
+    store.create_subject("other", "Other subject", "", 75, {})
+    assert store.get_subject("other")["status"] == "active"
+    store.set_status("other", "completed")
+    assert store.get_subject("other")["status"] == "completed"
+
+
+def test_invalid_status_and_unknown_subject_are_rejected(tmp_path):
+    store = StudyStore(tmp_path / "progress.sqlite3")
+    store.create_subject("other", "Other subject", "", 75, {})
+    with pytest.raises(ValueError):
+        store.set_status("other", "archived-forever")
+    with pytest.raises(KeyError):
+        store.set_status("missing", "completed")
+
+
+def test_existing_databases_gain_the_status_column(tmp_path):
+    path = tmp_path / "legacy.sqlite3"
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            "CREATE TABLE subjects (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', "
+            "exam_date TEXT, target_score INTEGER NOT NULL DEFAULT 80, materials_json TEXT NOT NULL, "
+            "is_demo INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)"
+        )
+        connection.execute(
+            "INSERT INTO subjects VALUES ('old', 'Old subject', '', NULL, 80, '{}', 0, '2026-01-01T00:00:00+00:00')"
+        )
+    connection.close()
+    assert StudyStore(path).get_subject("old")["status"] == "active"
