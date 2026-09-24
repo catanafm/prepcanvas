@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- README shows the diagnostic result and progress page, and the demo GIF now follows Diagnostic → Learn → Practice → Feedback → Progress over about 25 seconds (TASK-021).
+
 ### Changed
 
 - Progress activity names the question and topic and shows local time; the three progress metrics stay in one row on phones (TASK-020).
