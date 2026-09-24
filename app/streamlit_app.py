@@ -2,6 +2,7 @@ import os
 import re
 import sqlite3
 import sys
+from datetime import datetime
 from html import escape
 from pathlib import Path
 from uuid import uuid4
@@ -44,11 +45,13 @@ st.markdown(
     .metric .value { font-size:2rem; line-height:1.2; margin-top:.2rem; }
     .metric .hint { color:var(--muted); font-size:.75rem; margin-top:.3rem; }
     @media (max-width: 640px) {
-      .metrics, .metrics.three { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.5rem; }
+      [data-testid="stMainBlockContainer"] { padding-top:1.5rem; }
+      .metrics { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:.5rem; }
+      .metrics.three { gap:.5rem; }
       .metric { padding:.7rem .8rem; }
       .metric .value { font-size:1.5rem; }
       .hero { padding:1.2rem 1.25rem; }
-      .hero h1 { font-size:1.8rem; }
+      .hero h1 { font-size:1.75rem !important; line-height:1.2; }
     }
     .hero { padding:1.6rem 1.8rem; border-radius:24px; color:white; background:linear-gradient(125deg,#183f2d,#4d8064); margin-bottom:1.2rem; }
     .hero h1 { margin:0; font-size:2.5rem; }
@@ -57,7 +60,12 @@ st.markdown(
     .panel { background:white; border:1px solid #e1e8e3; border-radius:18px; padding:1.15rem 1.25rem; margin:.5rem 0 1rem; }
     .source { color:#68756d; font-size:.82rem; }
     .tag { display:inline-block; background:#edf4ef; color:#285a43; border-radius:999px; padding:.28rem .65rem; margin:.15rem .25rem .15rem 0; font-size:.8rem; font-weight:600; }
-    .next-action { background:#f6f1e8; border-left:5px solid #c98b38; border-radius:12px; padding:1rem 1.2rem; }
+    .next-action { background:#f6f1e8; border-left:5px solid #c98b38; border-radius:12px; padding:1rem 1.2rem; margin-bottom:1.25rem; }
+    [data-testid="stMainBlockContainer"] { padding-top:2.5rem; }
+    .activity { display:flex; justify-content:space-between; gap:1rem; padding:.55rem 0; border-bottom:1px solid #e1e8e3; }
+    .activity .what { min-width:0; }
+    .activity .meta { color:var(--muted); font-size:.8rem; }
+    .activity .score { font-weight:700; white-space:nowrap; }
     div.stButton > button, div.stFormSubmitButton > button { border-radius:999px; font-weight:700; }
     </style>
     """,
@@ -213,7 +221,10 @@ if page == "Overview":
     with left:
         st.subheader("Topic map")
         if not subject["topics"]:
-            st.info("This subject is ready for materials, but content ingestion is not part of the first public demo yet.")
+            st.info(
+                "Your exam date, target, and material list are saved. Uploading and processing materials is planned "
+                "for a later release; until then, switch to the demo subject in the sidebar to try every step."
+            )
         for topic in subject["topics"]:
             mastery = readiness["topics"][topic["id"]]
             st.markdown(f"**{escape(topic['title'])}** · {mastery['mastery']}% mastery")
@@ -412,9 +423,23 @@ elif page == "Progress":
                 st.markdown(f"**{topic_name}** · {mastery}%")
                 st.progress(mastery / 100)
         st.subheader("Recent activity")
+        topic_titles = {topic["id"]: topic["title"] for topic in subject["topics"]}
+        prompts = {question["id"]: question["prompt"] for question in subject["questions"]}
+        rows = []
         for row in attempts[:12]:
             ratio = round(row["score"] / row["max_score"] * 100) if row["max_score"] else 0
-            st.write(f'{row["created_at"][:16].replace("T", " ")} · {row["mode"].replace("_", " ").title()} · {ratio}%')
+            answered_at = datetime.fromisoformat(row["created_at"]).astimezone().strftime("%d %b, %H:%M")
+            what = prompts.get(row["question_id"], "Answer")
+            meta = " · ".join(
+                part
+                for part in (topic_titles.get(row["topic_id"]), row["mode"].replace("_", " ").capitalize(), answered_at)
+                if part
+            )
+            rows.append(
+                f'<div class="activity"><div class="what">{escape(what)}<div class="meta">{escape(meta)}</div></div>'
+                f'<div class="score">{ratio}%</div></div>'
+            )
+        st.markdown("".join(rows), unsafe_allow_html=True)
         st.caption("Readiness is a transparent heuristic based on recent topic evidence. It is not a guaranteed exam result.")
 
 else:
@@ -456,7 +481,10 @@ else:
                     materials,
                 )
                 st.session_state["select_subject"] = subject_id
-                st.session_state["flash"] = f"Subject “{cleaned_name}” created and selected."
+                st.session_state["flash"] = (
+                    f"Subject “{cleaned_name}” created and selected. Material upload arrives in a later release; "
+                    "until then, the demo subject shows the full study flow."
+                )
                 st.rerun()
             except sqlite3.IntegrityError:
                 st.error("Could not create the subject because its identifier already exists. Try again.")

@@ -5,7 +5,8 @@ drives headless Google Chrome over the DevTools protocol, and writes images
 to docs/media/. Only the bundled synthetic demo subject is shown.
 
 Usage:
-    .venv/bin/python scripts/capture_media.py
+    .venv/bin/python scripts/capture_media.py            # README media
+    .venv/bin/python scripts/capture_media.py --qa DIR   # every screen, desktop and phone
 
 Set CHROME_PATH if Chrome is not in its default location.
 """
@@ -236,6 +237,15 @@ class Page:
         result = await self.send("Page.captureScreenshot", format="png")
         return Image.open(io.BytesIO(base64.b64decode(result["data"]))).convert("RGB")
 
+    async def full_page_image(self, size, scale) -> Image.Image:
+        """Grow the viewport to the content height so one capture shows the whole page."""
+        height = await self.evaluate("document.querySelector('[data-testid=\"stMain\"]').scrollHeight")
+        await self.viewport((size[0], max(size[1], int(height))), scale)
+        await asyncio.sleep(0.6)
+        image = await self.image()
+        await self.viewport(size, scale)
+        return image
+
     async def save(self, name: str):
         path = MEDIA_DIR / name
         (await self.image()).save(path, optimize=True)
@@ -324,6 +334,28 @@ async def capture(url: str, chrome_port: int):
     connection.close()
 
 
+PAGES = ["Overview", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Subjects"]
+
+
+async def capture_qa(url: str, chrome_port: int, output: Path):
+    """Full-page captures of every screen at desktop and phone widths for visual review."""
+    targets = json.loads(wait_for_http(f"http://127.0.0.1:{chrome_port}/json/list"))
+    target = next(item for item in targets if item["type"] == "page")
+    connection = await websocket_connect(target["webSocketDebuggerUrl"], max_message_size=256 * 1024 * 1024)
+    page = Page(connection)
+    await page.send("Page.enable")
+    output.mkdir(parents=True, exist_ok=True)
+    for label, size, scale in (("desktop", DESKTOP, 1), ("phone", MOBILE, 2)):
+        await page.viewport(size, scale)
+        await page.goto(url)
+        for index, name in enumerate(PAGES, start=1):
+            await page.open_page(name)
+            path = output / f"{label}-{index}-{name.lower().replace(' ', '-')}.png"
+            (await page.full_page_image(size, scale)).save(path)
+            print(f"  {path}")
+    connection.close()
+
+
 def main():
     MEDIA_DIR.mkdir(parents=True, exist_ok=True)
     workdir = Path(tempfile.mkdtemp(prefix="prepcanvas-media-"))
@@ -351,7 +383,11 @@ def main():
     try:
         url = f"http://127.0.0.1:{app_port}"
         wait_for_http(f"{url}/_stcore/health")
-        asyncio.run(capture(url, chrome_port))
+        if "--qa" in sys.argv:
+            output = Path(sys.argv[sys.argv.index("--qa") + 1]).resolve()
+            asyncio.run(capture_qa(url, chrome_port, output))
+        else:
+            asyncio.run(capture(url, chrome_port))
     finally:
         chrome.terminate()
         app.terminate()

@@ -21,7 +21,7 @@
       "worked_example": "A company replaces plastic packaging with heavier glass. Packaging waste falls, but transport emissions rise. A systems view evaluates both effects before declaring the change an improvement.",
       "common_mistake": "Optimizing one visible metric while ignoring effects elsewhere in the system.",
       "coach_question": "What could happen outside the boundary of the metric you are optimizing?",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Systems thinking"
+      "source": "Sustainable Business workbook (synthetic) · Systems thinking"
     },
     {
       "id": "stakeholder-value",
@@ -31,7 +31,7 @@
       "worked_example": "A supplier-code policy can reduce operational risk for a company while increasing compliance costs for small suppliers. The decision should account for both impact and influence.",
       "common_mistake": "Treating every stakeholder as equally influential or assuming that influence and impact are the same.",
       "coach_question": "Who carries the cost, who receives the benefit, and who can change the decision?",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Stakeholder value"
+      "source": "Sustainable Business workbook (synthetic) · Stakeholder value"
     },
     {
       "id": "circular-economy",
@@ -41,7 +41,7 @@
       "worked_example": "A furniture company leases office chairs, repairs returned units, and reuses components. Revenue becomes service-based while material demand per customer falls.",
       "common_mistake": "Equating circularity only with recycling at the end of a product's life.",
       "coach_question": "How could the product retain value before recycling becomes necessary?",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Circular economy"
+      "source": "Sustainable Business workbook (synthetic) · Circular economy"
     },
     {
       "id": "carbon-basics",
@@ -51,7 +51,7 @@
       "worked_example": "Fuel burned in company vehicles is direct. Purchased electricity is energy-related. Emissions from suppliers and customer use sit in the wider value chain.",
       "common_mistake": "Assuming the emissions a company controls directly are always its largest source.",
       "coach_question": "Which emissions would disappear if the company stopped operating tomorrow, and which belong to its wider value chain?",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Carbon accounting basics"
+      "source": "Sustainable Business workbook (synthetic) · Carbon accounting basics"
     }
   ],
   "questions": [
@@ -69,7 +69,7 @@
       ],
       "correct_answer": "How might this change create effects elsewhere over time?",
       "explanation": "Systems thinking examines relationships, delayed effects, and consequences beyond the immediately visible problem.",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Systems thinking"
+      "source": "Sustainable Business workbook (synthetic) · Systems thinking"
     },
     {
       "id": "sys-2",
@@ -85,7 +85,7 @@
       ],
       "correct_answer": "an output of a system later influences that same system",
       "explanation": "A feedback loop occurs when a system's output returns as an input and changes future behavior.",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Systems thinking"
+      "source": "Sustainable Business workbook (synthetic) · Systems thinking"
     },
     {
       "id": "sys-3",
@@ -111,7 +111,7 @@
         }
       ],
       "explanation": "A local improvement is not necessarily a system improvement. Check boundaries, trade-offs, and delayed effects.",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Systems thinking"
+      "source": "Sustainable Business workbook (synthetic) · Systems thinking"
     },
     {
       "id": "stake-1",
@@ -122,7 +122,7 @@
       "options": ["Age and location", "Impact and influence", "Revenue and headcount", "Urgency and job title"],
       "correct_answer": "Impact and influence",
       "explanation": "Impact shows how strongly a group is affected; influence shows how strongly it can affect the decision.",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Stakeholder value"
+      "source": "Sustainable Business workbook (synthetic) · Stakeholder value"
     },
     {
       "id": "stake-2",
@@ -133,7 +133,7 @@
       "options": ["appears in every annual report", "can meaningfully affect or be affected by the decision", "belongs to the largest group", "is easiest to quantify"],
       "correct_answer": "can meaningfully affect or be affected by the decision",
       "explanation": "Materiality is about decision relevance and significant effects, not convenience or group size alone.",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Stakeholder value"
+      "source": "Sustainable Business workbook (synthetic) · Stakeholder value"
     },
     {
       "id": "stake-3",
@@ -159,7 +159,7 @@
         }
       ],
       "explanation": "Impact runs from the decision to the stakeholder; influence runs from the stakeholder to the decision.",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Stakeholder value"
+      "source": "Sustainable Business workbook (synthetic) · Stakeholder value"
     },
     {
       "id": "circ-1",
@@ -170,7 +170,7 @@
       "options": ["Disposal", "Material recycling", "Repair and reuse", "Energy recovery"],
       "correct_answer": "Repair and reuse",
       "explanation": "Repair and reuse preserve the product, its components, and the energy already invested in manufacturing.",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Circular economy"
+      "source": "Sustainable Business workbook (synthetic) · Circular economy"
     },
     {
       "id": "circ-2",
@@ -181,7 +181,7 @@
       "options": ["One-time anonymous sale", "Product-as-a-service", "Seasonal discounting", "Cost-plus pricing"],
       "correct_answer": "Product-as-a-service",
       "explanation": "When the provider retains ownership, it has a direct incentive to recover, maintain, and refurbish products.",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Circular economy"
+      "source": "Sustainable Business workbook (synthetic) · Circular economy"
     },
     {
       "id": "circ-3",
@@ -207,7 +207,7 @@
         }
       ],
       "explanation": "Circular design delays disposal by preserving product and component value before recycling is needed.",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Circular economy"
+      "source": "Sustainable Business workbook (synthetic) · Circular economy"
     },
     {
       "id": "carbon-1",
@@ -218,7 +218,7 @@
       "options": ["Scope 1", "Scope 2", "Scope 3", "Avoided emissions"],
       "correct_answer": "Scope 1",
       "explanation": "Scope 1 covers direct emissions from sources the organization owns or controls.",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Carbon accounting basics"
+      "source": "Sustainable Business workbook (synthetic) · Carbon accounting basics"
     },
     {
       "id": "carbon-2",
@@ -229,7 +229,7 @@
       "options": ["Scope 1", "Scope 2", "Scope 3 only", "Outside the inventory"],
       "correct_answer": "Scope 2",
       "explanation": "Scope 2 covers indirect emissions from purchased electricity, steam, heating, or cooling.",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Carbon accounting basics"
+      "source": "Sustainable Business workbook (synthetic) · Carbon accounting basics"
     },
     {
       "id": "carbon-3",
@@ -265,7 +265,7 @@
         }
       ],
       "explanation": "The three scopes distinguish direct operations, purchased energy, and the wider value chain.",
-      "source": "src/prepcanvas/demo_data/sustainable_business_source.md · Carbon accounting basics"
+      "source": "Sustainable Business workbook (synthetic) · Carbon accounting basics"
     }
   ]
 }

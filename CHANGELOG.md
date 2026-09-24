@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+- Progress activity names the question and topic and shows local time; the three progress metrics stay in one row on phones (TASK-020).
+- Source labels read "Sustainable Business workbook (synthetic) · Topic" instead of a repository file path (TASK-020).
+
+### Fixed
+
+- Tighter spacing above the navigation and after the next best action, and a smaller hero heading on phones (TASK-020).
+- Creating a subject, and opening a subject without study content, now explain that material upload comes in a later release and point to the demo subject (TASK-020).
+
 ## [0.1.0] - 2026-09-23
 
 First public release: a trustworthy, fully local demo of the study loop — diagnose, learn, practise, mock exam, and track readiness.

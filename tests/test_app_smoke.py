@@ -78,7 +78,8 @@ def test_created_subject_is_confirmed_and_selected(tmp_path, monkeypatch):
     next(button for button in app.button if button.label == "Create subject").click().run()
 
     assert len(app.exception) == 0
-    assert [toast.value for toast in app.toast] == ["Subject “Statistics 101” created and selected."]
+    assert app.toast[0].value.startswith("Subject “Statistics 101” created and selected.")
+    assert "later release" in app.toast[0].value
     assert app.sidebar.selectbox[0].value == "statistics-101"
 
     open_page(app, "Overview")
@@ -139,3 +140,19 @@ def test_resetting_demo_progress_clears_saved_answers(tmp_path, monkeypatch):
     assert len(app.exception) == 0
     assert StudyStore(database).list_attempts(subject["id"]) == []
     assert StudyStore(database).get_subject(subject["id"]) is not None
+
+
+def test_recent_activity_names_the_question_and_topic(tmp_path, monkeypatch):
+    database = tmp_path / "activity.sqlite3"
+    monkeypatch.setenv("PREPCANVAS_DB_PATH", str(database))
+    store = StudyStore(database)
+    subject = load_demo_subject()
+    store.seed_demo_subject(subject)
+    store.save_attempt(subject["id"], "mock_exam", {"topic_id": "systems-thinking", "question_id": "sys-1", "score": 1, "max_score": 1})
+
+    app = AppTest.from_file("app/streamlit_app.py", default_timeout=10).run()
+    open_page(app, "Progress")
+    activity = next(item.value for item in app.markdown if 'class="activity"' in item.value)
+    assert "Which question best reflects systems thinking?" in activity
+    assert "Systems thinking · Mock exam ·" in activity
+    assert "100%" in activity
