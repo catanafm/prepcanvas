@@ -19,6 +19,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-011](TASK-011-first-release.md) | Publish the first tagged release (v0.1.0) | chore | medium | done |
 | [TASK-020](TASK-020-visual-qa.md) | Complete visual QA across every screen and fix findings | fix | medium | done |
 | [TASK-021](TASK-021-presentation-media.md) | Capture diagnostic and progress media and extend the demo GIF | docs | medium | done |
+| [TASK-022](TASK-022-release-0-1-1.md) | Publish the v0.1.1 presentation polish release | chore | medium | done |
 | [TASK-012](TASK-012-local-material-upload.md) | Upload local PDF, TXT, and Markdown materials | feature | medium | backlog |
 | [TASK-013](TASK-013-source-preview-classification.md) | Preview and classify sources before processing | feature | low | backlog |
 | [TASK-014](TASK-014-topic-map-citations.md) | Build a topic map with source citations | feature | low | backlog |
@@ -31,6 +32,6 @@ Tasks are listed in planned order. The test suite verifies that this board match
 ## Milestones
 
 - **v0.1.0 — Trustworthy demo:** TASK-002 → TASK-011 · released 2026-09-23
-- **v0.1.1 — Presentation polish:** TASK-020 → TASK-021
+- **v0.1.1 — Presentation polish:** TASK-020 → TASK-022 · released 2026-09-24
 - **v0.2.0 — Real subjects:** TASK-012 → TASK-015, TASK-019
 - **v0.3.0 — Optional AI:** TASK-016 → TASK-018
