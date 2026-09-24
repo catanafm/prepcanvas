@@ -1,15 +1,16 @@
 ---
 id: TASK-013
-title: Preview and classify sources before processing
+title: Extract text locally and preview each source
 type: feature
 status: backlog
-priority: low
+priority: high
 area: ingestion
 created: 2026-09-23
 ---
 
 ## Acceptance criteria
 
-- [ ] Each uploaded source shows a text preview
-- [ ] The user can classify it as workbook, practice test, sample answer, notes, transcript, or other
-- [ ] Classification is stored and editable
+- [ ] Text is extracted offline (`pypdf` for PDFs) and cached next to the upload
+- [ ] Each file shows page count, a text preview, and what was detected (sections, questions)
+- [ ] PDFs without a text layer are flagged with guidance instead of failing silently
+- [ ] The learner can correct a file's role before processing
