@@ -140,7 +140,13 @@ class Page:
         )
 
     async def goto(self, url: str):
+        """Load the app; it opens on the subject library."""
         await self.send("Page.navigate", url=url)
+        await self.wait_for("document.querySelector('.st-key-new_subject button') !== null")
+        await self.settle()
+
+    async def open_subject(self, subject_id: str):
+        await self.evaluate(f"document.querySelector('.st-key-open_{subject_id} button').click()")
         await self.wait_for("document.querySelector('.st-key-page label') !== null")
         await self.settle()
 
@@ -272,6 +278,8 @@ async def capture(url: str, chrome_port: int):
     print("Screenshots:")
     await page.viewport(DESKTOP, 2)
     await page.goto(url)
+    await page.save("library.png")
+    await page.open_subject(subject["id"])
     await page.save("overview.png")
 
     await page.open_page("Diagnostic")
@@ -349,7 +357,7 @@ async def capture(url: str, chrome_port: int):
     connection.close()
 
 
-PAGES = ["Overview", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Subjects"]
+PAGES = ["Overview", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Settings"]
 
 
 async def capture_qa(url: str, chrome_port: int, output: Path):
@@ -360,9 +368,12 @@ async def capture_qa(url: str, chrome_port: int, output: Path):
     page = Page(connection)
     await page.send("Page.enable")
     output.mkdir(parents=True, exist_ok=True)
+    demo_id = load_demo_subject()["id"]
     for label, size, scale in (("desktop", DESKTOP, 1), ("phone", MOBILE, 2)):
         await page.viewport(size, scale)
         await page.goto(url)
+        (await page.full_page_image(size, scale)).save(output / f"{label}-0-library.png")
+        await page.open_subject(demo_id)
         for index, name in enumerate(PAGES, start=1):
             await page.open_page(name)
             path = output / f"{label}-{index}-{name.lower().replace(' ', '-')}.png"

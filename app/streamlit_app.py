@@ -2,7 +2,7 @@ import os
 import re
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import date, datetime, timezone
 from html import escape
 from pathlib import Path
 from uuid import uuid4
@@ -19,6 +19,7 @@ from prepcanvas.catalog import diagnostic_questions as select_diagnostic_questio
 from prepcanvas.catalog import get_topic, load_demo_subject
 from prepcanvas.coaching import recommend_strategy
 from prepcanvas.grading import grade_question, grade_questions
+from prepcanvas.library import exam_countdown, group_subjects, last_activity
 from prepcanvas.readiness import calculate_readiness, next_best_action
 from prepcanvas.storage import StudyStore
 
@@ -32,12 +33,23 @@ st.markdown(
     .stApp { background: #fbfcfa; color: var(--ink); }
     [data-testid="stSidebar"] { background: #17211b; }
     [data-testid="stSidebar"] * { color: #f7faf7 !important; }
-    [data-testid="stSidebar"] div[data-baseweb="select"] * { color: #17211b !important; }
+    [data-testid="stSidebar"] button { background:transparent; border:1px solid #4d6b5a; }
+    [data-testid="stSidebar"] button:hover { border-color:#f7faf7; }
     .st-key-page [role="radiogroup"] { gap:.4rem; flex-wrap:wrap; margin-bottom:.5rem; }
     .st-key-page label[data-baseweb="radio"] { margin:0; padding:.35rem .9rem; border:1px solid #d5e1d9; border-radius:999px; background:white; cursor:pointer; }
     .st-key-page label[data-baseweb="radio"] > div:first-child { display:none; }
     .st-key-page label[data-baseweb="radio"]:has(input:checked) { background:var(--accent); border-color:var(--accent); }
     .st-key-page label[data-baseweb="radio"]:has(input:checked) p { color:white; }
+    .welcome { margin:0 0 1.25rem; }
+    .welcome h1 { margin:0 0 .25rem; }
+    .welcome p { color:var(--muted); margin:0; }
+    .card-title { font-weight:700; font-size:1.1rem; margin:0 0 .15rem; }
+    .card-meta { color:var(--muted); font-size:.85rem; margin:.1rem 0; }
+    .card-stats { display:flex; gap:1.25rem; margin:.6rem 0 .2rem; }
+    .card-stats b { display:block; font-size:1.35rem; }
+    .card-stats span { color:var(--muted); font-size:.75rem; }
+    .badge { display:inline-block; background:var(--warm); color:#8a5a1c; border-radius:999px; padding:.1rem .5rem; font-size:.7rem; font-weight:700; margin-left:.4rem; vertical-align:middle; }
+    .subject-bar { color:var(--muted); font-size:.85rem; }
     .metrics { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:.75rem; margin:0 0 1rem; }
     .metrics.three { grid-template-columns:repeat(3, minmax(0, 1fr)); }
     .metric { background:white; border:1px solid #e1e8e3; padding:.9rem 1rem; border-radius:16px; min-width:0; }
@@ -156,29 +168,149 @@ def render_feedback(question: dict, result: dict):
     render_source(question["source"])
 
 
-records = store.list_subjects()
-subject_lookup = {item["id"]: item for item in records}
+PAGES = ["Overview", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Settings"]
 
-# Widget state can only be set before the widget renders, so actions that
-# finish with st.rerun() leave their follow-up here for the next run.
-if "select_subject" in st.session_state:
-    st.session_state["subject_id"] = st.session_state.pop("select_subject")
+
+def open_subject(subject_id: str):
+    st.session_state["subject_id"] = subject_id
+    st.session_state["page"] = PAGES[0]
+    st.session_state["view"] = "library"
+
+
+def open_library(view: str = "library"):
+    st.session_state["subject_id"] = None
+    st.session_state["view"] = view
+
+
+def render_subject_card(item: dict):
+    record = merged_subject(item)
+    item_attempts = store.list_attempts(item["id"])
+    item_readiness = calculate_readiness(record, item_attempts)
+    badge = '<span class="badge">Sample</span>' if item["is_demo"] else ""
+    has_content = bool(record["topics"])
+    stats = (
+        f'<div class="card-stats"><div><b>{item_readiness["score"]}%</b><span>Readiness</span></div>'
+        f'<div><b>{item_readiness["coverage"]}%</b><span>Topic coverage</span></div></div>'
+        if has_content
+        else '<div class="card-meta">Study content arrives with material upload.</div>'
+    )
+    with st.container(border=True):
+        st.markdown(
+            f'<div class="card-title">{escape(item["name"])}{badge}</div>'
+            f'<div class="card-meta">{escape(exam_countdown(item.get("exam_date"), date.today()))} · '
+            f'{escape(last_activity(item_attempts, datetime.now(timezone.utc)))}</div>{stats}',
+            unsafe_allow_html=True,
+        )
+        label = "Continue" if item_attempts else "Open"
+        st.button(label, key=f'open_{item["id"]}', type="primary", on_click=open_subject, args=(item["id"],))
+
+
+def render_library(records: list):
+    groups = group_subjects(records)
+    summary = f'{len(groups["active"])} in progress · {len(groups["completed"])} completed'
+    st.markdown(
+        '<div class="welcome"><h1>Welcome to PrepCanvas</h1>'
+        f"<p>Pick up where you left off, or add a subject for your next exam. {summary}.</p></div>",
+        unsafe_allow_html=True,
+    )
+    st.subheader("In progress")
+    columns = st.columns(3)
+    with columns[0]:
+        with st.container(border=True):
+            st.markdown(
+                '<div class="card-title">+ New subject</div>'
+                '<div class="card-meta">Set an exam date and target, then record which materials you have.</div>',
+                unsafe_allow_html=True,
+            )
+            st.button("New subject", key="new_subject", on_click=open_library, args=("new",))
+    for index, item in enumerate(groups["active"], start=1):
+        with columns[index % 3]:
+            render_subject_card(item)
+    if groups["completed"]:
+        st.subheader("Completed")
+        columns = st.columns(3)
+        for index, item in enumerate(groups["completed"]):
+            with columns[index % 3]:
+                render_subject_card(item)
+
+
+def render_new_subject(records: list):
+    st.button("← All subjects", key="back_from_new", on_click=open_library)
+    st.title("New subject")
+    st.write(
+        "Set up the subject now. Uploading and processing your own materials is planned for a later "
+        "release; until then, the sample subject shows the full study flow."
+    )
+    with st.form("new_subject_form"):
+        name = st.text_input("Subject name")
+        exam_date = st.date_input("Exam date", value=None)
+        target_score = st.slider("Target score", 50, 100, 80)
+        st.write("Available materials")
+        material_columns = st.columns(3)
+        materials = {
+            "workbook": material_columns[0].checkbox("Workbook"),
+            "practice_tests": material_columns[1].checkbox("Practice tests"),
+            "sample_answers": material_columns[2].checkbox("Sample answers"),
+            "notes": material_columns[0].checkbox("Notes"),
+            "transcripts": material_columns[1].checkbox("Session transcripts"),
+            "other": material_columns[2].checkbox("Other materials"),
+        }
+        create_submitted = st.form_submit_button("Create subject", type="primary")
+    if create_submitted:
+        cleaned_name = name.strip()
+        if not cleaned_name:
+            st.warning("Enter a subject name before creating it.")
+        elif any(item["name"].casefold() == cleaned_name.casefold() for item in records):
+            st.error("A subject with this name already exists.")
+        else:
+            subject_id = re.sub(r"[^a-z0-9]+", "-", cleaned_name.lower()).strip("-")
+            if not subject_id:
+                subject_id = f"subject-{uuid4().hex[:8]}"
+            if store.get_subject(subject_id):
+                subject_id = f"{subject_id}-{uuid4().hex[:8]}"
+            try:
+                store.create_subject(
+                    subject_id,
+                    cleaned_name,
+                    exam_date.isoformat() if exam_date else "",
+                    target_score,
+                    materials,
+                )
+                open_subject(subject_id)
+                st.session_state["flash"] = (
+                    f"Subject “{cleaned_name}” created. Material upload arrives in a later release; "
+                    "until then, the sample subject shows the full study flow."
+                )
+                st.rerun()
+            except sqlite3.IntegrityError:
+                st.error("Could not create the subject because its identifier already exists. Try again.")
+
+
 if "flash" in st.session_state:
     st.toast(st.session_state.pop("flash"), icon="✅")
 
+records = store.list_subjects()
+subject_lookup = {item["id"]: item for item in records}
+
 st.sidebar.markdown("## ◉ PrepCanvas")
 st.sidebar.caption("Local-first exam preparation")
-selected_id = st.sidebar.selectbox(
-    "Subject",
-    options=list(subject_lookup),
-    format_func=lambda value: subject_lookup[value]["name"],
-    key="subject_id",
+st.sidebar.button("All subjects", key="sidebar_library", on_click=open_library, width="stretch")
+
+selected_id = st.session_state.get("subject_id")
+if selected_id not in subject_lookup:
+    if st.session_state.get("view") == "new":
+        render_new_subject(records)
+    else:
+        render_library(records)
+    st.stop()
+
+# Inside a subject: a way back to the library, then the workspace switcher,
+# which sits above the content so it stays reachable on phones.
+back_column, name_column = st.columns([1, 4], vertical_alignment="center")
+back_column.button("← All subjects", key="back_to_library", on_click=open_library)
+name_column.markdown(
+    f'<div class="subject-bar">{escape(subject_lookup[selected_id]["name"])}</div>', unsafe_allow_html=True
 )
-PAGES = ["Overview", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Subjects"]
-
-
-# The workspace switcher sits above the content so it stays reachable on
-# phones, where Streamlit collapses the sidebar.
 page = st.radio("Workspace", PAGES, key="page", horizontal=True, label_visibility="collapsed")
 
 subject = merged_subject(subject_lookup[selected_id])
@@ -443,74 +575,43 @@ elif page == "Progress":
         st.caption("Readiness is a transparent heuristic based on recent topic evidence. It is not a guaranteed exam result.")
 
 else:
-    st.title("Subjects and materials")
-    st.write("Create a subject and record which source types are available. File ingestion comes in the next product iteration.")
-    with st.form("new_subject"):
-        name = st.text_input("Subject name")
-        exam_date = st.date_input("Exam date", value=None)
-        target_score = st.slider("Target score", 50, 100, 80)
-        st.write("Available materials")
-        material_columns = st.columns(3)
-        materials = {
-            "workbook": material_columns[0].checkbox("Workbook"),
-            "practice_tests": material_columns[1].checkbox("Practice tests"),
-            "sample_answers": material_columns[2].checkbox("Sample answers"),
-            "notes": material_columns[0].checkbox("Notes"),
-            "transcripts": material_columns[1].checkbox("Session transcripts"),
-            "other": material_columns[2].checkbox("Other materials"),
-        }
-        create_submitted = st.form_submit_button("Create subject", type="primary")
-    if create_submitted:
-        cleaned_name = name.strip()
-        if not cleaned_name:
-            st.warning("Enter a subject name before creating it.")
-        elif any(item["name"].casefold() == cleaned_name.casefold() for item in records):
-            st.error("A subject with this name already exists.")
-        else:
-            subject_id = re.sub(r"[^a-z0-9]+", "-", cleaned_name.lower()).strip("-")
-            if not subject_id:
-                subject_id = f"subject-{uuid4().hex[:8]}"
-            if store.get_subject(subject_id):
-                subject_id = f"{subject_id}-{uuid4().hex[:8]}"
-            try:
-                store.create_subject(
-                    subject_id,
-                    cleaned_name,
-                    exam_date.isoformat() if exam_date else "",
-                    target_score,
-                    materials,
-                )
-                st.session_state["select_subject"] = subject_id
-                st.session_state["flash"] = (
-                    f"Subject “{cleaned_name}” created and selected. Material upload arrives in a later release; "
-                    "until then, the demo subject shows the full study flow."
-                )
-                st.rerun()
-            except sqlite3.IntegrityError:
-                st.error("Could not create the subject because its identifier already exists. Try again.")
+    st.title("Subject settings")
+    item = subject_lookup[selected_id]
+    exam_label = exam_countdown(item.get("exam_date"), date.today())
+    selected_materials = [material_label(key) for key, value in item["materials"].items() if value]
+    st.markdown(
+        f'<div class="panel"><b>{escape(item["name"])}</b><br>{escape(exam_label)} · target {item["target_score"]}%<br>'
+        f'<span class="source">{escape(", ".join(selected_materials) or "No materials recorded")}</span></div>',
+        unsafe_allow_html=True,
+    )
 
-    st.subheader("Current subjects")
-    for item in records:
-        demo_label = " · demo" if item["is_demo"] else ""
-        st.markdown(f'**{item["name"]}**{demo_label}')
-        selected_materials = [material_label(key) for key, value in item["materials"].items() if value]
-        st.caption(", ".join(selected_materials) or "No materials selected")
-        with st.expander("Manage subject"):
-            removes = "its saved answers and coaching profile" if item["is_demo"] else "the subject and all of its progress"
-            confirmed = st.checkbox(
-                f"I understand this permanently removes {removes}.",
-                key=f'confirm_{item["id"]}',
-            )
-            reset_column, delete_column = st.columns(2)
-            if reset_column.button("Reset progress", key=f'reset_{item["id"]}', disabled=not confirmed):
-                store.reset_progress(item["id"])
-                st.session_state["flash"] = f'Progress for “{item["name"]}” was reset.'
-                st.rerun()
-            if not item["is_demo"] and delete_column.button(
-                "Delete subject", key=f'delete_{item["id"]}', type="primary", disabled=not confirmed
-            ):
-                store.delete_subject(item["id"])
-                if selected_id == item["id"]:
-                    st.session_state["select_subject"] = demo["id"]
-                st.session_state["flash"] = f'Subject “{item["name"]}” was deleted.'
-                st.rerun()
+    st.subheader("Status")
+    if item.get("status") == "completed":
+        st.write("This subject is in your **Completed** list.")
+        if st.button("Reopen subject", key="reopen_subject"):
+            store.set_status(selected_id, "active")
+            st.session_state["flash"] = f'“{item["name"]}” is back in progress.'
+            st.rerun()
+    else:
+        st.write("Finished with this exam? Move the subject to your **Completed** list; its progress is kept.")
+        if st.button("Mark as completed", key="complete_subject"):
+            store.set_status(selected_id, "completed")
+            st.session_state["flash"] = f'“{item["name"]}” moved to Completed.'
+            open_library()
+            st.rerun()
+
+    st.subheader("Manage data")
+    removes = "its saved answers and coaching profile" if item["is_demo"] else "the subject and all of its progress"
+    confirmed = st.checkbox(f"I understand this permanently removes {removes}.", key=f'confirm_{item["id"]}')
+    reset_column, delete_column = st.columns(2)
+    if reset_column.button("Reset progress", key=f'reset_{item["id"]}', disabled=not confirmed):
+        store.reset_progress(item["id"])
+        st.session_state["flash"] = f'Progress for “{item["name"]}” was reset.'
+        st.rerun()
+    if not item["is_demo"] and delete_column.button(
+        "Delete subject", key=f'delete_{item["id"]}', type="primary", disabled=not confirmed
+    ):
+        store.delete_subject(item["id"])
+        open_library()
+        st.session_state["flash"] = f'Subject “{item["name"]}” was deleted.'
+        st.rerun()
