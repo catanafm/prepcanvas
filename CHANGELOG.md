@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- The demo is a *Sample* subject that can be removed with its progress, stays removed across restarts, and can be added back from the library; an empty library offers *Create your first subject* and *Explore the sample subject* (TASK-024).
 - A subject library home screen: welcome, *In progress* and *Completed* groups, a *+ New subject* card, and per-subject cards with exam countdown, last activity, readiness, and coverage. Subjects can be marked as completed and reopened (TASK-023).
 
 ### Changed

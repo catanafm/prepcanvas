@@ -93,7 +93,7 @@ def get_store(path: str) -> StudyStore:
 default_database_path = ROOT_DIR / "data" / "local" / "prepcanvas.sqlite3"
 store = get_store(str(os.environ.get("PREPCANVAS_DB_PATH", default_database_path)))
 demo = load_demo_subject()
-store.seed_demo_subject(demo)
+store.ensure_sample_subject(demo)
 
 
 def merged_subject(record: dict) -> dict:
@@ -205,7 +205,41 @@ def render_subject_card(item: dict):
         st.button(label, key=f'open_{item["id"]}', type="primary", on_click=open_subject, args=(item["id"],))
 
 
+def restore_sample():
+    store.restore_sample_subject(demo)
+    open_subject(demo["id"])
+    st.session_state["flash"] = "Sample subject added. Explore every step with synthetic content."
+
+
+def render_empty_library():
+    st.markdown(
+        '<div class="welcome"><h1>Welcome to PrepCanvas</h1>'
+        "<p>Plan and practise for your exams in one private workspace on this computer.</p></div>",
+        unsafe_allow_html=True,
+    )
+    create_column, sample_column = st.columns(2)
+    with create_column:
+        with st.container(border=True):
+            st.markdown(
+                '<div class="card-title">Create your first subject</div>'
+                '<div class="card-meta">Set an exam date and target for a course you are studying.</div>',
+                unsafe_allow_html=True,
+            )
+            st.button("Create your first subject", key="new_subject", type="primary", on_click=open_library, args=("new",))
+    with sample_column:
+        with st.container(border=True):
+            st.markdown(
+                '<div class="card-title">Explore the sample subject</div>'
+                '<div class="card-meta">Try the diagnostic, coaching, practice, and mock exam with synthetic content.</div>',
+                unsafe_allow_html=True,
+            )
+            st.button("Explore the sample subject", key="add_sample", on_click=restore_sample)
+
+
 def render_library(records: list):
+    if not records:
+        render_empty_library()
+        return
     groups = group_subjects(records)
     summary = f'{len(groups["active"])} in progress · {len(groups["completed"])} completed'
     st.markdown(
@@ -232,6 +266,9 @@ def render_library(records: list):
         for index, item in enumerate(groups["completed"]):
             with columns[index % 3]:
                 render_subject_card(item)
+    if store.sample_removed():
+        st.caption("Want to see how PrepCanvas works with ready-made content?")
+        st.button("Add sample subject", key="add_sample", type="tertiary", on_click=restore_sample)
 
 
 def render_new_subject(records: list):
@@ -601,16 +638,20 @@ else:
             st.rerun()
 
     st.subheader("Manage data")
-    removes = "its saved answers and coaching profile" if item["is_demo"] else "the subject and all of its progress"
+    removes = "its saved answers and coaching profile, or the sample itself" if item["is_demo"] else "the subject and all of its progress"
     confirmed = st.checkbox(f"I understand this permanently removes {removes}.", key=f'confirm_{item["id"]}')
     reset_column, delete_column = st.columns(2)
     if reset_column.button("Reset progress", key=f'reset_{item["id"]}', disabled=not confirmed):
         store.reset_progress(item["id"])
         st.session_state["flash"] = f'Progress for “{item["name"]}” was reset.'
         st.rerun()
-    if not item["is_demo"] and delete_column.button(
-        "Delete subject", key=f'delete_{item["id"]}', type="primary", disabled=not confirmed
-    ):
+    if item["is_demo"]:
+        if delete_column.button("Remove sample subject", key="remove_sample", type="primary", disabled=not confirmed):
+            store.remove_sample_subject(item["id"])
+            open_library()
+            st.session_state["flash"] = "Sample subject removed. You can add it back from the library."
+            st.rerun()
+    elif delete_column.button("Delete subject", key=f'delete_{item["id"]}', type="primary", disabled=not confirmed):
         store.delete_subject(item["id"])
         open_library()
         st.session_state["flash"] = f'Subject “{item["name"]}” was deleted.'

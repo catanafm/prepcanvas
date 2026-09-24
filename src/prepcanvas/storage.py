@@ -55,6 +55,11 @@ class StudyStore:
                     FOREIGN KEY(subject_id) REFERENCES subjects(id)
                 );
 
+                CREATE TABLE IF NOT EXISTS app_settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                );
+
                 CREATE TABLE IF NOT EXISTS coaching_profiles (
                     subject_id TEXT PRIMARY KEY,
                     strategy_id TEXT NOT NULL,
@@ -87,6 +92,39 @@ class StudyStore:
     @staticmethod
     def _now() -> str:
         return datetime.now(timezone.utc).isoformat()
+
+    def _get_setting(self, key: str, default: str = "") -> str:
+        with self._connect() as connection:
+            row = connection.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
+        return row["value"] if row else default
+
+    def _set_setting(self, key: str, value: str):
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO app_settings (key, value) VALUES (?, ?) "
+                "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                (key, value),
+            )
+
+    def sample_removed(self) -> bool:
+        return self._get_setting("sample_removed") == "1"
+
+    def ensure_sample_subject(self, subject: dict):
+        """Seed or refresh the sample subject unless the learner removed it."""
+        if not self.sample_removed():
+            self.seed_demo_subject(subject)
+
+    def remove_sample_subject(self, subject_id: str):
+        """Remove the sample subject and its progress, and keep it removed across restarts."""
+        with self._connect() as connection:
+            connection.execute("DELETE FROM attempts WHERE subject_id = ?", (subject_id,))
+            connection.execute("DELETE FROM coaching_profiles WHERE subject_id = ?", (subject_id,))
+            connection.execute("DELETE FROM subjects WHERE id = ? AND is_demo = 1", (subject_id,))
+        self._set_setting("sample_removed", "1")
+
+    def restore_sample_subject(self, subject: dict):
+        self._set_setting("sample_removed", "0")
+        self.seed_demo_subject(subject)
 
     def seed_demo_subject(self, subject: dict):
         with self._connect() as connection:
@@ -166,7 +204,7 @@ class StudyStore:
         if subject is None:
             raise KeyError(f"Unknown subject '{subject_id}'")
         if subject["is_demo"]:
-            raise ValueError("The demo subject cannot be deleted; reset its progress instead.")
+            raise ValueError("Use remove_sample_subject for the sample subject.")
         with self._connect() as connection:
             connection.execute("DELETE FROM attempts WHERE subject_id = ?", (subject_id,))
             connection.execute("DELETE FROM coaching_profiles WHERE subject_id = ?", (subject_id,))

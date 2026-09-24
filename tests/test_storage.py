@@ -110,7 +110,7 @@ def test_delete_subject_removes_its_progress(tmp_path):
     assert store.get_profile("other") is None
 
 
-def test_demo_subject_cannot_be_deleted(tmp_path, demo_subject):
+def test_sample_subject_is_not_deleted_through_delete_subject(tmp_path, demo_subject):
     store = StudyStore(tmp_path / "progress.sqlite3")
     store.seed_demo_subject(demo_subject)
     with pytest.raises(ValueError):
@@ -153,3 +153,38 @@ def test_existing_databases_gain_the_status_column(tmp_path):
         )
     connection.close()
     assert StudyStore(path).get_subject("old")["status"] == "active"
+
+
+def test_removed_sample_stays_removed_across_restarts(tmp_path, demo_subject):
+    path = tmp_path / "progress.sqlite3"
+    store = StudyStore(path)
+    store.ensure_sample_subject(demo_subject)
+    seed_progress(store, demo_subject["id"])
+
+    store.remove_sample_subject(demo_subject["id"])
+    restarted = StudyStore(path)
+    restarted.ensure_sample_subject(demo_subject)
+
+    assert restarted.sample_removed()
+    assert restarted.get_subject(demo_subject["id"]) is None
+    assert restarted.list_attempts(demo_subject["id"]) == []
+    assert restarted.get_profile(demo_subject["id"]) is None
+
+
+def test_restored_sample_starts_fresh(tmp_path, demo_subject):
+    store = StudyStore(tmp_path / "progress.sqlite3")
+    store.ensure_sample_subject(demo_subject)
+    store.remove_sample_subject(demo_subject["id"])
+    store.restore_sample_subject(demo_subject)
+
+    assert not store.sample_removed()
+    assert store.get_subject(demo_subject["id"])["is_demo"] is True
+    assert store.list_attempts(demo_subject["id"]) == []
+
+
+def test_removing_the_sample_keeps_user_subjects(tmp_path, demo_subject):
+    store = StudyStore(tmp_path / "progress.sqlite3")
+    store.ensure_sample_subject(demo_subject)
+    store.create_subject("other", "Other subject", "", 75, {})
+    store.remove_sample_subject(demo_subject["id"])
+    assert [subject["id"] for subject in store.list_subjects()] == ["other"]
