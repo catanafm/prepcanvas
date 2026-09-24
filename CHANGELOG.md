@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-24
+
+Presentation polish: every screen reviewed at desktop and phone widths, clearer progress history, and a fuller README walkthrough.
+
 ### Added
 
 - README shows the diagnostic result and progress page, and the demo GIF now follows Diagnostic → Learn → Practice → Feedback → Progress over about 25 seconds (TASK-021).
@@ -47,5 +51,6 @@ First public release: a trustworthy, fully local demo of the study loop — diag
 
 - `TODO.md`, replaced by the task board in `tasks/` (TASK-001).
 
-[Unreleased]: https://github.com/catanafm/prepcanvas/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/catanafm/prepcanvas/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/catanafm/prepcanvas/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/catanafm/prepcanvas/releases/tag/v0.1.0
