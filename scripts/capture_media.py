@@ -255,10 +255,10 @@ class Page:
 def save_gif(frames: list, name: str, width: int = 960):
     resized = [frame.resize((width, round(frame.height * width / frame.width)), Image.LANCZOS) for frame in frames]
     palette = [frame.quantize(colors=128, method=Image.MEDIANCUT, dither=Image.NONE) for frame in resized]
-    durations = [frame.info.get("duration", 1600) for frame in frames]
+    durations = [frame.info["duration"] for frame in frames]
     path = MEDIA_DIR / name
     palette[0].save(path, save_all=True, append_images=palette[1:], duration=durations, loop=0, optimize=True)
-    print(f"  {path.relative_to(ROOT)} ({path.stat().st_size // 1024} KB)")
+    print(f"  {path.relative_to(ROOT)} ({path.stat().st_size // 1024} KB, {sum(durations) / 1000:.1f} s)")
 
 
 async def capture(url: str, chrome_port: int):
@@ -273,6 +273,13 @@ async def capture(url: str, chrome_port: int):
     await page.viewport(DESKTOP, 2)
     await page.goto(url)
     await page.save("overview.png")
+
+    await page.open_page("Diagnostic")
+    for group, question in enumerate(diagnostic_questions(subject)):
+        await page.choose(group, question["correct_answer"])
+    await page.click_button("Build my learning profile")
+    await page.scroll_to_text("Your starting strategy", "center")
+    await page.save("diagnostic.png")
 
     await page.open_page("Learn")
     await page.save("learn.png")
@@ -296,6 +303,9 @@ async def capture(url: str, chrome_port: int):
     await page.scroll_to_text("% ·")
     await page.save("mock-exam.png")
 
+    await page.open_page("Progress")
+    await page.save("progress.png")
+
     await page.viewport(MOBILE, 3)
     await page.open_page("Overview")
     await page.save("mobile-overview.png")
@@ -304,32 +314,37 @@ async def capture(url: str, chrome_port: int):
     await page.viewport(DESKTOP, 1)
     frames = []
 
-    def frame(image, duration=1600):
+    def frame(image, duration):
         image.info["duration"] = duration
         frames.append(image)
 
+    # Diagnostic -> Learn -> Practice -> Feedback -> Progress, about 25 seconds.
     await page.open_page("Diagnostic")
-    frame(await page.image(), 1400)
+    frame(await page.image(), 2500)
     for group, question in enumerate(diagnostic_questions(subject)):
         await page.choose(group, question["correct_answer"])
-    frame(await page.image(), 1200)
+    frame(await page.image(), 2000)
     await page.click_button("Build my learning profile")
     await page.scroll_to_text("Your starting strategy", "center")
-    frame(await page.image(), 2200)
+    frame(await page.image(), 3500)
 
     await page.open_page("Learn")
-    frame(await page.image(), 2000)
+    frame(await page.image(), 3000)
+    await page.mouse_click("document.querySelector('[data-testid=\"stExpander\"] summary')")
+    await page.settle()
+    await page.scroll_to_text("See it in context", "center")
+    frame(await page.image(), 3500)
 
     await page.open_page("Practice")
     await page.select(1, "Why can improving one sustainability metric")
     await page.type_into(0, "The metric uses a narrow boundary and ignores trade-offs elsewhere.")
-    frame(await page.image(), 1400)
+    frame(await page.image(), 2500)
     await page.click_button("Check answer")
     await page.scroll_to_text("Correct ·", "center")
-    frame(await page.image(), 2400)
+    frame(await page.image(), 4000)
 
-    await page.open_page("Overview")
-    frame(await page.image(), 2400)
+    await page.open_page("Progress")
+    frame(await page.image(), 4500)
     save_gif(frames, "demo.gif")
     connection.close()
 
