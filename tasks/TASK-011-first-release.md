@@ -24,4 +24,4 @@ Carried over from the former `TODO.md`.
 
 Depends on TASK-002 and TASK-003 so the first release ships with trustworthy grading and readiness.
 
-Resolution: released on 2026-09-23 as `v0.1.0` (annotated tag on the squash-merge commit of this task). Release notes are the `0.1.0` changelog section. Repository topics: `education`, `exam-preparation`, `learning`, `local-first`, `python`, `spaced-repetition`, `sqlite`, `streamlit`.
+Resolution: released on 2026-09-23 as `v0.1.0` (annotated tag on the squash-merge commit of this task). Release notes are the `0.1.0` changelog section. Repository topics: `education`, `exam-preparation`, `learning`, `local-first`, `python`, `sqlite`, `streamlit`, `study-tool` (`spaced-repetition` was left out because spaced review is not implemented yet).
