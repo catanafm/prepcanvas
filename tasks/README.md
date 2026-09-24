@@ -21,7 +21,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-021](TASK-021-presentation-media.md) | Capture diagnostic and progress media and extend the demo GIF | docs | medium | done |
 | [TASK-022](TASK-022-release-0-1-1.md) | Publish the v0.1.1 presentation polish release | chore | medium | done |
 | [TASK-023](TASK-023-subject-library.md) | Add a subject library home screen | feature | high | done |
-| [TASK-024](TASK-024-removable-sample-subject.md) | Treat the demo as a removable sample subject | feature | high | backlog |
+| [TASK-024](TASK-024-removable-sample-subject.md) | Treat the demo as a removable sample subject | feature | high | done |
 | [TASK-025](TASK-025-subject-content-packages.md) | Store study content for user subjects as local packages | feature | high | backlog |
 | [TASK-012](TASK-012-local-material-upload.md) | Upload study materials by role in a new-subject wizard | feature | high | backlog |
 | [TASK-013](TASK-013-source-preview-classification.md) | Extract text locally and preview each source | feature | high | backlog |

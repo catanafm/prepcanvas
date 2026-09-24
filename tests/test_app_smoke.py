@@ -144,11 +144,42 @@ def test_destructive_actions_require_confirmation(tmp_path, monkeypatch):
     assert button(app, "reset_statistics-101").disabled
 
 
-def test_demo_subject_has_no_delete_button(tmp_path, monkeypatch):
-    _, app = start(tmp_path, monkeypatch)
+def remove_sample(app):
     open_subject(app)
     open_page(app, "Settings")
     assert not any(item.key == f"delete_{DEMO_ID}" for item in app.button)
+    app.checkbox(key=f"confirm_{DEMO_ID}").check().run()
+    button(app, "remove_sample").click().run()
+
+
+def test_removing_the_sample_leaves_an_empty_library_with_two_starting_points(tmp_path, monkeypatch):
+    database, app = start(tmp_path, monkeypatch)
+    remove_sample(app)
+
+    assert len(app.exception) == 0
+    assert [toast.value for toast in app.toast] == ["Sample subject removed. You can add it back from the library."]
+    assert button(app, "new_subject").label == "Create your first subject"
+    assert button(app, "add_sample").label == "Explore the sample subject"
+    assert StudyStore(database).get_subject(DEMO_ID) is None
+
+
+def test_removed_sample_stays_removed_after_a_restart(tmp_path, monkeypatch):
+    _, app = start(tmp_path, monkeypatch, "restart.sqlite3")
+    remove_sample(app)
+    _, restarted = start(tmp_path, monkeypatch, "restart.sqlite3")
+    assert not any(item.key == f"open_{DEMO_ID}" for item in restarted.button)
+
+
+def test_sample_can_be_added_back_from_the_library(tmp_path, monkeypatch):
+    _, app = start(tmp_path, monkeypatch)
+    create_subject(app, "Statistics 101")
+    button(app, "back_to_library").click().run()
+    remove_sample(app)
+
+    assert button(app, "add_sample").label == "Add sample subject"
+    button(app, "add_sample").click().run()
+    assert len(app.exception) == 0
+    assert any("Sustainable Business Fundamentals" in item.value for item in app.markdown if 'class="subject-bar"' in item.value)
 
 
 def test_deleting_a_subject_returns_to_the_library(tmp_path, monkeypatch):
