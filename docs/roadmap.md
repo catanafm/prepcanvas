@@ -13,16 +13,17 @@ Goal: a safe, reproducible repository that demonstrates the product loop.
 - tests, documentation, privacy boundaries
 - screenshots and GitHub release
 
-## Stage 2 — Local source ingestion
+## Stage 2 — Real subjects with your own assistant
 
-Goal: make the product useful for a real private subject without sending documents to a third party.
+Goal: make the product useful for a real private subject without API keys or a hosted service.
 
-- upload PDF, TXT, and Markdown files
-- classify workbook, practice test, sample answer, notes, and transcript sources
-- preview before processing
-- normalized topic and citation model
-- ingestion diagnostics and recoverable errors
-- subject export and local backup
+- subject library and removable sample subject
+- one validated subject package format shared by the sample and user subjects
+- materials stored privately per subject, added from the Content page
+- an Agent Skill that lets any CLI coding agent build the package from the materials
+- a copy-and-paste prompt and JSON import for chat assistants
+- validation with a rubric self-check, shown in the app with clear errors
+- questions labelled by origin so the mock exam can replay the practice exam or a generated variant
 
 ## Stage 3 — Better learning decisions
 
@@ -34,17 +35,17 @@ Goal: improve recommendations with stronger evidence.
 - separate confidence from demonstrated knowledge
 - validate readiness against repeated mock-exam scores
 - study plan based on exam date and available study time
+- refreshed README media showing the subject flow
 
-## Stage 4 — Optional AI providers
+## Stage 4 — Smoother building
 
-Goal: improve explanations and question variety without making AI mandatory.
+Goal: make the build step easier without making AI mandatory or metered.
 
-- provider interface with explicit opt-in
-- local-model adapter first
-- optional cloud-provider adapter
-- citation checks and structured outputs
+- local text extraction cache so every agent can read PDF and DOCX materials
+- structured citations (file and page) shown in Learn and feedback
+- run an installed CLI agent from the app with progress
+- fully offline builds through a local model such as Ollama
 - semantic grading with deterministic rubric safeguards
-- cost and privacy controls
 
 ## Stage 5 — Exploratory voice practice
 

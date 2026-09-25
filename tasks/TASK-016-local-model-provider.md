@@ -1,6 +1,6 @@
 ---
 id: TASK-016
-title: Add an optional local-model provider interface
+title: Build packages fully offline with a local model
 type: feature
 status: backlog
 priority: low
@@ -8,13 +8,16 @@ area: ai
 created: 2026-09-23
 ---
 
+## Context
+
+The build step relies on the learner's own AI assistant (TASK-027). Learners who want nothing to leave the machine could use a local model through Ollama or a similar runtime.
+
 ## Acceptance criteria
 
-- [ ] A provider interface with explicit opt-in via `PREPCANVAS_AI_PROVIDER`
-- [ ] A local-model adapter implements it
+- [ ] `python -m prepcanvas build --provider ollama <subject-id>` produces a package from the materials using the same schema document and validator
 - [ ] The app remains fully functional with no provider configured
-- [ ] Outputs include source citations and are validated before display
+- [ ] The Content page explains the quality trade-off of small local models for rubric writing
 
 ## Notes
 
-Decision (2026-09-24): ingestion is deterministic and local first (TASK-012 → TASK-014, TASK-026). A local model via Ollama may later add summaries and rubric suggestions; content still comes from the learner's own files and no material leaves the machine.
+Decision (2026-09-25): bring-your-own-agent is the primary path; a local model is an optional, fully offline alternative and not a requirement.

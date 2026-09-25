@@ -20,6 +20,8 @@ from prepcanvas.catalog import get_topic, load_demo_subject
 from prepcanvas.coaching import recommend_strategy
 from prepcanvas.grading import grade_question, grade_questions
 from prepcanvas.library import exam_countdown, group_subjects, last_activity
+from prepcanvas.packages import MATERIAL_SUFFIXES, SubjectFiles, content_summary
+from prepcanvas.prompts import SKILL_NAME, agent_request, chat_prompt, display_path
 from prepcanvas.readiness import calculate_readiness, next_best_action
 from prepcanvas.storage import StudyStore
 
@@ -92,25 +94,40 @@ def get_store(path: str) -> StudyStore:
 
 default_database_path = ROOT_DIR / "data" / "local" / "prepcanvas.sqlite3"
 store = get_store(str(os.environ.get("PREPCANVAS_DB_PATH", default_database_path)))
+files = SubjectFiles(Path(os.environ.get("PREPCANVAS_PRIVATE_DIR", ROOT_DIR / "data" / "private")))
 demo = load_demo_subject()
 store.ensure_sample_subject(demo)
 
 
-def merged_subject(record: dict) -> dict:
+def load_content(record: dict) -> dict:
+    """The study content of a subject: the bundled sample, or the validated private package."""
     if record["id"] == demo["id"]:
-        return {**demo, **record, "topics": demo["topics"], "questions": demo["questions"]}
-    return {**record, "topics": [], "questions": []}
+        return {"state": "sample", "package": demo, "issues": [], "path": None}
+    return files.load_package(record["id"])
 
 
-def material_label(key: str) -> str:
-    return {
-        "workbook": "Workbook",
-        "practice_tests": "Practice tests",
-        "sample_answers": "Sample answers",
-        "notes": "Notes",
-        "transcripts": "Session transcripts",
-        "other": "Other materials",
-    }.get(key, key.replace("_", " ").title())
+def merged_subject(record: dict, content: dict = None) -> dict:
+    """Subject metadata from the database plus topics and questions from its package."""
+    package = (content or load_content(record))["package"]
+    if package is None:
+        return {**record, "topics": [], "questions": [], "sources": []}
+    merged = {
+        **package,
+        **record,
+        "topics": package["topics"],
+        "questions": package["questions"],
+        "sources": package.get("sources", []),
+    }
+    if not merged.get("description"):
+        merged["description"] = package.get("description", "")
+    return merged
+
+
+def material_names(item: dict, subject: dict) -> list:
+    """What the subject was, or will be, built from: sample sources or uploaded files."""
+    if item["is_demo"]:
+        return [source["title"] for source in subject.get("sources", [])]
+    return [material["name"] for material in files.list_materials(item["id"])]
 
 
 def render_source(source: str):
@@ -168,7 +185,7 @@ def render_feedback(question: dict, result: dict):
     render_source(question["source"])
 
 
-PAGES = ["Overview", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Settings"]
+PAGES = ["Overview", "Content", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Settings"]
 
 
 def open_subject(subject_id: str):
@@ -182,8 +199,13 @@ def open_library(view: str = "library"):
     st.session_state["view"] = view
 
 
+def go_to_page(page: str):
+    st.session_state["page"] = page
+
+
 def render_subject_card(item: dict):
-    record = merged_subject(item)
+    content = load_content(item)
+    record = merged_subject(item, content)
     item_attempts = store.list_attempts(item["id"])
     item_readiness = calculate_readiness(record, item_attempts)
     badge = '<span class="badge">Sample</span>' if item["is_demo"] else ""
@@ -192,7 +214,7 @@ def render_subject_card(item: dict):
         f'<div class="card-stats"><div><b>{item_readiness["score"]}%</b><span>Readiness</span></div>'
         f'<div><b>{item_readiness["coverage"]}%</b><span>Topic coverage</span></div></div>'
         if has_content
-        else '<div class="card-meta">Study content arrives with material upload.</div>'
+        else f'<div class="card-meta">{escape(content_hint(item, content))}</div>'
     )
     with st.container(border=True):
         st.markdown(
@@ -203,6 +225,15 @@ def render_subject_card(item: dict):
         )
         label = "Continue" if item_attempts else "Open"
         st.button(label, key=f'open_{item["id"]}', type="primary", on_click=open_subject, args=(item["id"],))
+
+
+def content_hint(item: dict, content: dict) -> str:
+    """One line that tells a learner what a subject without content needs next."""
+    if content["state"] == "invalid":
+        return "Study content has errors. Open Content to see them."
+    if files.list_materials(item["id"]):
+        return "Materials added. Build the study content next."
+    return "No study content yet. Add materials to get started."
 
 
 def restore_sample():
@@ -222,7 +253,7 @@ def render_empty_library():
         with st.container(border=True):
             st.markdown(
                 '<div class="card-title">Create your first subject</div>'
-                '<div class="card-meta">Set an exam date and target for a course you are studying.</div>',
+                '<div class="card-meta">Set an exam date and target, then build study content from your own materials.</div>',
                 unsafe_allow_html=True,
             )
             st.button("Create your first subject", key="new_subject", type="primary", on_click=open_library, args=("new",))
@@ -253,7 +284,7 @@ def render_library(records: list):
         with st.container(border=True):
             st.markdown(
                 '<div class="card-title">+ New subject</div>'
-                '<div class="card-meta">Set an exam date and target, then record which materials you have.</div>',
+                '<div class="card-meta">Set an exam date and target, then build study content from your own materials.</div>',
                 unsafe_allow_html=True,
             )
             st.button("New subject", key="new_subject", on_click=open_library, args=("new",))
@@ -275,23 +306,13 @@ def render_new_subject(records: list):
     st.button("← All subjects", key="back_from_new", on_click=open_library)
     st.title("New subject")
     st.write(
-        "Set up the subject now. Uploading and processing your own materials is planned for a later "
-        "release; until then, the sample subject shows the full study flow."
+        "Name the subject and set your goal. In the next step you add your materials and build the study "
+        "content, topics, questions, and rubrics, with your own AI assistant. Everything stays on this computer."
     )
     with st.form("new_subject_form"):
         name = st.text_input("Subject name")
         exam_date = st.date_input("Exam date", value=None)
         target_score = st.slider("Target score", 50, 100, 80)
-        st.write("Available materials")
-        material_columns = st.columns(3)
-        materials = {
-            "workbook": material_columns[0].checkbox("Workbook"),
-            "practice_tests": material_columns[1].checkbox("Practice tests"),
-            "sample_answers": material_columns[2].checkbox("Sample answers"),
-            "notes": material_columns[0].checkbox("Notes"),
-            "transcripts": material_columns[1].checkbox("Session transcripts"),
-            "other": material_columns[2].checkbox("Other materials"),
-        }
         create_submitted = st.form_submit_button("Create subject", type="primary")
     if create_submitted:
         cleaned_name = name.strip()
@@ -311,16 +332,233 @@ def render_new_subject(records: list):
                     cleaned_name,
                     exam_date.isoformat() if exam_date else "",
                     target_score,
-                    materials,
+                    {},
                 )
+                files.write_brief(store.get_subject(subject_id))
                 open_subject(subject_id)
+                go_to_page("Content")
                 st.session_state["flash"] = (
-                    f"Subject “{cleaned_name}” created. Material upload arrives in a later release; "
-                    "until then, the sample subject shows the full study flow."
+                    f"Subject “{cleaned_name}” created. Next: add your materials and build its study content."
                 )
                 st.rerun()
             except sqlite3.IntegrityError:
                 st.error("Could not create the subject because its identifier already exists. Try again.")
+
+
+def render_needs_content(reason: str):
+    st.info(f"{reason} This subject has none yet.")
+    st.button("Set up study content", key="needs_content", type="primary", on_click=go_to_page, args=("Content",))
+
+
+def package_summary_line(content: dict) -> str:
+    if content["state"] == "valid":
+        summary = content_summary(content["package"])
+        return (
+            f'{summary["topics"]} topics · {summary["questions"]} questions '
+            f'({summary["source"]} from your materials, {summary["generated"]} generated)'
+        )
+    if content["state"] == "invalid":
+        errors = sum(1 for issue in content["issues"] if issue["level"] == "error")
+        return f"package.json has {errors} error(s) and is not loaded"
+    return "no package.json yet"
+
+
+def render_setup_checklist(item: dict, content: dict):
+    """Overview panel for a subject without content: what exists, what is missing, where to go."""
+    materials = files.list_materials(item["id"])
+    materials_line = f'{len(materials)} file(s) added' if materials else "no files yet"
+    if content["state"] == "invalid":
+        next_step = "Open Content to see the validation errors and fix the package."
+    elif materials:
+        next_step = "Build the study content with your AI assistant, then check it on the Content page."
+    else:
+        next_step = "Add your workbook, practice exam, answer key, or notes on the Content page."
+    st.markdown(
+        '<div class="panel"><b>Set up study content</b><br>'
+        f'<span class="source">1 · Materials: {escape(materials_line)}<br>'
+        f'2 · Study content: {escape(package_summary_line(content))}<br>'
+        f'3 · Study: diagnostic, learning, practice, and mock exam unlock once the content loads</span><br><br>'
+        f'{escape(next_step)}</div>',
+        unsafe_allow_html=True,
+    )
+    st.button("Open Content", key="open_content", type="primary", on_click=go_to_page, args=("Content",))
+
+
+def render_issues(issues: list):
+    for issue in issues:
+        line = f'`{issue["path"]}` {issue["message"]}'
+        if issue["level"] == "error":
+            st.error(line)
+        else:
+            st.warning(line)
+
+
+def render_content_review(subject: dict):
+    """Read-only review of every topic and question, so the learner can spot mistakes before studying."""
+    with st.expander("Review topics and questions"):
+        for topic in subject["topics"]:
+            st.markdown(f'**{escape(topic["title"])}** · {escape(topic["source"])}')
+            st.caption(", ".join(topic["key_concepts"]))
+            for question in (q for q in subject["questions"] if q["topic_id"] == topic["id"]):
+                kind = "Multiple choice" if question["type"] == "multiple_choice" else "Short answer"
+                origin = "from materials" if question.get("origin") == "source" else "generated"
+                st.markdown(
+                    f'- {escape(question["prompt"])}  \n'
+                    f'  <span class="source">{kind} · {question["points"]} pt · {origin} · {escape(question["source"])}</span>',
+                    unsafe_allow_html=True,
+                )
+
+
+def render_materials_section(item: dict):
+    st.subheader("1 · Materials")
+    st.caption(
+        f"Files are stored in {display_path(files.materials_dir(item['id']))} on this computer. PrepCanvas itself never uploads them anywhere."
+    )
+    with st.form("materials_form", clear_on_submit=True):
+        uploads = st.file_uploader(
+            "Add your workbook, practice exam, answer key, or notes",
+            type=[suffix.lstrip(".") for suffix in MATERIAL_SUFFIXES],
+            accept_multiple_files=True,
+        )
+        add_submitted = st.form_submit_button("Add files")
+    if add_submitted:
+        saved, problems = [], []
+        for upload in uploads or []:
+            try:
+                saved.append(files.save_material(item["id"], upload.name, upload.getvalue()).name)
+            except ValueError as error:
+                problems.append(str(error))
+        for problem in problems:
+            st.error(problem)
+        if saved:
+            st.session_state["flash"] = f'Added {len(saved)} file(s): {", ".join(saved)}.'
+            st.rerun()
+        elif not problems:
+            st.warning("Choose at least one file first.")
+    materials = files.list_materials(item["id"])
+    if not materials:
+        st.info("No files yet. PDF, TXT, Markdown, and DOCX files up to 25 MB each are accepted.")
+    for material in materials:
+        name_column, remove_column = st.columns([5, 1], vertical_alignment="center")
+        name_column.markdown(f'{escape(material["name"])} <span class="source">· {material["bytes"] // 1024} KB</span>', unsafe_allow_html=True)
+        if remove_column.button("Remove", key=f'remove_{material["name"]}', type="tertiary"):
+            files.remove_material(item["id"], material["name"])
+            st.rerun()
+    return materials
+
+
+def render_build_section(item: dict, materials: list, content: dict):
+    st.subheader("2 · Build the study content")
+    st.write(
+        "An AI assistant reads your materials and writes `package.json`: topics, questions taken from your practice "
+        "exam, similar new questions, and rubrics. Use whichever assistant you already have; no API key is needed."
+    )
+    st.caption(
+        "Privacy: PrepCanvas sends nothing. The assistant you choose receives your materials under your own account, "
+        "so pick one whose data handling you accept."
+    )
+    agent_tab, chat_tab, manual_tab = st.tabs(["Coding agent in a terminal", "Chat assistant", "By hand"])
+    with agent_tab:
+        st.markdown(
+            "1. Open a terminal in the PrepCanvas folder.\n"
+            "2. Start your agent: `claude`, `codex`, `gemini`, or any agent that reads `AGENTS.md`.\n"
+            "3. Ask it to build the subject:"
+        )
+        st.code(agent_request(item["id"], files.subject_dir(item["id"])), language="text")
+        st.markdown(
+            f"The `{SKILL_NAME}` skill in this repository tells the agent how to read the materials, write the package, "
+            "and run the validator until it passes. When it is done, return here and press **Check again**."
+        )
+    with chat_tab:
+        brief = files.read_brief(item["id"])
+        if brief is None:
+            files.write_brief(item)
+            brief = files.read_brief(item["id"])
+        st.markdown(
+            "1. Attach your materials to a new chat in ChatGPT, Claude, Gemini, or another assistant.\n"
+            "2. Paste this prompt. It contains the full package schema.\n"
+            "3. Save the JSON reply as `package.json` and import it below."
+        )
+        with st.expander("Show the prompt"):
+            st.code(chat_prompt(brief, materials, files.subject_dir(item["id"])), language="markdown")
+        with st.form("package_form", clear_on_submit=True):
+            package_upload = st.file_uploader("Import package.json", type=["json"])
+            import_submitted = st.form_submit_button("Import package")
+        if import_submitted:
+            if package_upload is None:
+                st.warning("Choose the package.json file first.")
+            else:
+                files.save_package(item["id"], package_upload.getvalue())
+                st.session_state["flash"] = "Package imported. Check the validation result below."
+                st.rerun()
+    with manual_tab:
+        st.markdown(
+            f"Write `{display_path(files.package_path(item['id']))}` yourself, following "
+            "[docs/subject-package.md](https://github.com/catanafm/prepcanvas/blob/main/docs/subject-package.md), "
+            "and validate it with:"
+        )
+        st.code(f"PYTHONPATH=src python -m prepcanvas validate {display_path(files.package_path(item['id']))}", language="bash")
+
+
+def render_result_section(item: dict, subject: dict, content: dict):
+    st.subheader("3 · Check the result")
+    st.button("Check again", key="check_content")
+    if content["state"] == "missing":
+        st.info(f"No package yet. It is expected at {display_path(files.package_path(item['id']))}.")
+        return
+    if content["state"] == "invalid":
+        st.error("The package could not be loaded. Fix these issues, or ask your assistant to, and check again.")
+        render_issues(content["issues"])
+        return
+    st.success(f'Study content loaded: {package_summary_line(content)}.')
+    if content["issues"]:
+        st.caption("Warnings do not block studying, but fixing them gives better diagnostics and readiness estimates.")
+        render_issues(content["issues"])
+    render_content_review(subject)
+    st.button("Start with the diagnostic", key="start_diagnostic", type="primary", on_click=go_to_page, args=("Diagnostic",))
+
+
+def render_content_page(item: dict, subject: dict, content: dict):
+    st.title("Study content")
+    if item["is_demo"]:
+        st.write(
+            "The sample subject ships with synthetic content built from one synthetic workbook. Your own subjects "
+            "get their content from a package you build with your AI assistant from your own materials."
+        )
+        st.success(f"Sample content: {package_summary_line({**content, 'state': 'valid'})}.")
+        render_content_review(subject)
+        return
+    st.write(
+        "Study content is built once, outside the app, from your own materials. After that, everything in PrepCanvas "
+        "works locally: grading, readiness, and coaching need no AI at all."
+    )
+    materials = render_materials_section(item)
+    if content["state"] == "valid":
+        with st.expander("Rebuild or extend the content"):
+            render_build_section(item, materials, content)
+    else:
+        render_build_section(item, materials, content)
+    render_result_section(item, subject, content)
+
+
+def select_exam_questions(subject: dict) -> list:
+    """Let the learner sit the practice exam from the materials, a generated variant, or everything."""
+    questions = subject["questions"]
+    origins = {question.get("origin", "source") for question in questions}
+    if len(origins) < 2:
+        return questions
+    choice = st.radio(
+        "Exam set",
+        ["source", "generated", "all"],
+        format_func=lambda value: {
+            "source": "Practice exam from your materials",
+            "generated": "New variant with generated questions",
+            "all": "Everything",
+        }[value],
+        horizontal=True,
+        key="mock_exam_set",
+    )
+    return questions if choice == "all" else [question for question in questions if question.get("origin") == choice]
 
 
 if "flash" in st.session_state:
@@ -350,7 +588,8 @@ name_column.markdown(
 )
 page = st.radio("Workspace", PAGES, key="page", horizontal=True, label_visibility="collapsed")
 
-subject = merged_subject(subject_lookup[selected_id])
+content = load_content(subject_lookup[selected_id])
+subject = merged_subject(subject_lookup[selected_id], content)
 attempts = store.list_attempts(selected_id)
 readiness = calculate_readiness(subject, attempts)
 profile = store.get_profile(selected_id)
@@ -390,10 +629,7 @@ if page == "Overview":
     with left:
         st.subheader("Topic map")
         if not subject["topics"]:
-            st.info(
-                "Your exam date, target, and material list are saved. Uploading and processing materials is planned "
-                "for a later release; until then, switch to the demo subject in the sidebar to try every step."
-            )
+            render_setup_checklist(subject_lookup[selected_id], content)
         for topic in subject["topics"]:
             mastery = readiness["topics"][topic["id"]]
             st.markdown(f"**{escape(topic['title'])}** · {mastery['mastery']}% mastery")
@@ -409,20 +645,19 @@ if page == "Overview":
             )
         else:
             st.markdown('<div class="panel"><b>No learning profile yet</b><br>Take the short diagnostic so PrepCanvas can choose a starting approach.</div>', unsafe_allow_html=True)
-        st.subheader("Available materials")
-        tags = "".join(
-            f'<span class="tag">{material_label(key)}</span>'
-            for key, available in subject["materials"].items()
-            if available
-        )
-        st.markdown(tags or "No materials selected yet.", unsafe_allow_html=True)
+        st.subheader("Materials")
+        tags = "".join(f'<span class="tag">{escape(name)}</span>' for name in material_names(subject_lookup[selected_id], subject))
+        st.markdown(tags or "No materials yet. Add them on the Content page.", unsafe_allow_html=True)
+
+elif page == "Content":
+    render_content_page(subject_lookup[selected_id], subject, content)
 
 elif page == "Diagnostic":
     st.title("Find your starting point")
     st.write("A short knowledge check plus your confidence level determines the first coaching strategy.")
     diagnostic_questions = select_diagnostic_questions(subject)
     if not diagnostic_questions:
-        st.info("Add content to this subject before running a diagnostic. The synthetic demo subject is ready to use.")
+        render_needs_content("The diagnostic uses the multiple-choice questions of your study content.")
     else:
         with st.form("diagnostic_form"):
             diagnostic_answers = {}
@@ -455,7 +690,7 @@ elif page == "Diagnostic":
 elif page == "Learn":
     st.title("Coach a topic")
     if not subject["topics"]:
-        st.info("Learning content will appear after source materials are processed.")
+        render_needs_content("Topic explanations come from your study content.")
     else:
         topic_id = st.selectbox(
             "Topic",
@@ -498,7 +733,7 @@ elif page == "Learn":
 elif page == "Practice":
     st.title("Targeted practice")
     if not subject["questions"]:
-        st.info("Practice questions will appear after source materials are processed.")
+        render_needs_content("Practice questions come from your study content.")
     else:
         topic_options = ["all"] + [topic["id"] for topic in subject["topics"]]
         chosen_topic = st.selectbox(
@@ -531,11 +766,12 @@ elif page == "Mock exam":
     st.title("Mock exam")
     st.write("Feedback stays hidden until the full attempt is submitted.")
     if not subject["questions"]:
-        st.info("A mock exam will be available after questions are added.")
+        render_needs_content("The mock exam uses the questions of your study content.")
     else:
+        exam_questions = select_exam_questions(subject)
         with st.form("mock_exam"):
             exam_answers = {}
-            for index, question in enumerate(subject["questions"], start=1):
+            for index, question in enumerate(exam_questions, start=1):
                 st.markdown(f'**{index}. {question["prompt"]}** · {question["points"]} pt')
                 if question["type"] == "multiple_choice":
                     exam_answers[question["id"]] = st.radio(
@@ -555,18 +791,18 @@ elif page == "Mock exam":
         if exam_submitted:
             unanswered = [
                 question
-                for question in subject["questions"]
+                for question in exam_questions
                 if not exam_answers.get(question["id"]) or not str(exam_answers[question["id"]]).strip()
             ]
             if unanswered:
                 st.warning(f"Answer all questions before submitting the mock exam ({len(unanswered)} remaining).")
             else:
-                graded = grade_questions(subject["questions"], exam_answers)
+                graded = grade_questions(exam_questions, exam_answers)
                 for result in graded["results"]:
                     store.save_attempt(selected_id, "mock_exam", result)
                 percentage = round(graded["score"] / graded["max_score"] * 100) if graded["max_score"] else 0
                 st.header(f'{percentage}% · {graded["score"]}/{graded["max_score"]}')
-                for question, result in zip(subject["questions"], graded["results"]):
+                for question, result in zip(exam_questions, graded["results"]):
                     with st.expander(f'{question["prompt"]} · {result["score"]}/{result["max_score"]}'):
                         render_feedback(question, result)
 
@@ -615,10 +851,10 @@ else:
     st.title("Subject settings")
     item = subject_lookup[selected_id]
     exam_label = exam_countdown(item.get("exam_date"), date.today())
-    selected_materials = [material_label(key) for key, value in item["materials"].items() if value]
+    selected_materials = material_names(item, subject)
     st.markdown(
         f'<div class="panel"><b>{escape(item["name"])}</b><br>{escape(exam_label)} · target {item["target_score"]}%<br>'
-        f'<span class="source">{escape(", ".join(selected_materials) or "No materials recorded")}</span></div>',
+        f'<span class="source">{escape(", ".join(selected_materials) or "No materials yet")}</span></div>',
         unsafe_allow_html=True,
     )
 
@@ -639,6 +875,11 @@ else:
 
     st.subheader("Manage data")
     removes = "its saved answers and coaching profile, or the sample itself" if item["is_demo"] else "the subject and all of its progress"
+    if not item["is_demo"]:
+        st.caption(
+            f"Deleting the subject keeps its materials and package in {display_path(files.subject_dir(item['id']))} so nothing you "
+            "uploaded is lost; remove that folder yourself if you no longer need it."
+        )
     confirmed = st.checkbox(f"I understand this permanently removes {removes}.", key=f'confirm_{item["id"]}')
     reset_column, delete_column = st.columns(2)
     if reset_column.button("Reset progress", key=f'reset_{item["id"]}', disabled=not confirmed):

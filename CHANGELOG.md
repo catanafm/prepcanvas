@@ -6,11 +6,17 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Your own subjects are now studyable: a subject *Content* page to add materials (PDF, TXT, Markdown, DOCX) into a private per-subject folder, build the study content with the AI assistant you already use, import a package, and review the validation result and every topic and question. The Overview shows a setup checklist until content loads, and every study mode links to the Content page (TASK-012, TASK-028).
+- A documented subject package format shared by the sample and user subjects, with `python -m prepcanvas validate` and in-app validation: structural checks, cross-references, and a rubric self-check that rejects rubrics the model answer cannot satisfy (TASK-025).
+- The `prepcanvas-build` Agent Skill and an `AGENTS.md` pointer, so Claude Code, Codex, Gemini CLI, or any agent that reads the repository can build a subject package from the materials and validate it; a copy-and-paste prompt (`python -m prepcanvas prompt`) covers chat assistants (TASK-027).
+- Questions taken from a practice exam are labelled `origin: source` and generated ones `origin: generated`; the mock exam can be limited to either set (TASK-026, TASK-029).
 - The demo is a *Sample* subject that can be removed with its progress, stays removed across restarts, and can be added back from the library; an empty library offers *Create your first subject* and *Explore the sample subject* (TASK-024).
 - A subject library home screen: welcome, *In progress* and *Completed* groups, a *+ New subject* card, and per-subject cards with exam countdown, last activity, readiness, and coverage. Subjects can be marked as completed and reopened (TASK-023).
 
 ### Changed
 
+- Creating a subject asks only for a name, exam date, and target, then opens the Content page; the material checkboxes are gone, materials are real files now (TASK-028).
+- README, architecture, and roadmap describe the build-time AI approach and state that the app sends nothing anywhere while the assistant you choose receives your materials under your own account (TASK-028).
 - The sidebar subject dropdown is replaced by the library; inside a subject, *← All subjects* returns home and the *Subjects* tab became per-subject *Settings* (TASK-023).
 
 ## [0.1.1] - 2026-09-24
