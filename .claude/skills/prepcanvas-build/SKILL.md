@@ -34,7 +34,17 @@ The subject id is `$ARGUMENTS` when given; otherwise take it from the request or
 - `explanation` is shown after every answer, right or wrong: state why the answer is what it is, with a pointer into the materials.
 - Do not invent facts the materials do not support. Write in the language of the materials unless asked otherwise.
 
-## 4. Write and validate the package
+## 4. Mirror the exam: blueprint and pool
+
+If a practice exam is among the materials, describe its structure in `exam_blueprint`: one section per group of questions with the same type and points, in exam order (for example 14 multiple choice × 3 points, then 2 short answers × 8, 2 × 10, 2 × 6). PrepCanvas composes numbered mock-exam variants from the pool by this blueprint, so the pool decides how many different exams the learner can sit:
+
+- for every section, the pool needs **at least three times `count`** questions of that type with **exactly** that number of points, the source questions included;
+- spread them over every topic so each variant covers the course, not one chapter;
+- keep the difficulty and phrasing of the real exam; vary scenarios, not just words.
+
+Without a practice exam, skip the blueprint.
+
+## 5. Write and validate the package
 
 Follow [docs/subject-package.md](../../../docs/subject-package.md) exactly; the bundled sample `src/prepcanvas/demo_data/sustainable_business.json` is a complete example. Set `"id"` to the subject id, `schema_version` to `1`, and list in `sources` exactly the files you used, with their roles; excluded files do not appear there.
 
@@ -46,6 +56,6 @@ PYTHONPATH=src python -m prepcanvas validate data/private/subjects/<subject-id>/
 
 (Use `.venv/bin/python` if the project virtual environment exists.) Fix every `ERROR` and re-run until the command reports `valid`. The check that fails most often is *the model answer scores N/M against its own rubric*: adjust the accepted phrases or keywords so the model answer earns full marks. Treat `WARNING` lines as advice and fix them when the materials allow.
 
-## 5. Report
+## 6. Report
 
 Tell the learner: which files you used in which role and which you excluded and why, how many topics and questions you produced, how many came from the materials and how many are generated, what you could not use, and any warnings left. Ask them to open the subject's **Content** page in PrepCanvas and review the topics and questions before studying. Do not modify anything under `src/`, `app/`, or `tests/` for this task.
