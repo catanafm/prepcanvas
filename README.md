@@ -102,6 +102,8 @@ The package holds topics, questions taken from your practice exam (`origin: sour
 PYTHONPATH=src python -m prepcanvas validate data/private/subjects/<subject-id>/package.json
 ```
 
+**Moving to another computer.** Progress lives in `data/local/prepcanvas.sqlite3`, materials and content in `data/private/`. *Settings → Prepare export* packs one subject into a zip with its materials, content, and progress; *Import a subject* in the library restores it. Alternatively point `PREPCANVAS_DB_PATH` and `PREPCANVAS_PRIVATE_DIR` in `.env` at a synced folder, but never open the same SQLite database from two computers at once.
+
 **Privacy.** PrepCanvas sends nothing anywhere. The assistant you choose receives your materials under your own account and its own terms; the app says so next to the build instructions, and you can stay fully offline by writing the package yourself. Assistant subscriptions and free tiers change their limits from time to time, so check yours before building a large subject.
 
 ## Repository structure

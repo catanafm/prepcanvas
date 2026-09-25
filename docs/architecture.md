@@ -73,6 +73,10 @@ For each topic, PrepCanvas keeps only the latest answered attempt per question. 
 
 Overall readiness is the mean of topic mastery. A subject is marked ready only when the target score is reached and every topic has evidence.
 
+## Moving subjects
+
+`transfer.py` packs a subject into a zip: `subject.json` (record, coaching profile, attempts), `package.json`, `brief.json`, and the materials. Importing inserts the subject as a user subject with its original timestamps and writes the files back under `data/private/`. The sample subject is never exported.
+
 ## Data flow inside the app
 
 The UI never reads materials. It loads the package through `SubjectFiles.load_package`, merges the database record (name, exam date, target, status) with the package content (topics, questions, sources), and passes the result to the same catalog, grading, and readiness code the sample uses. A subject without a valid package shows a setup checklist instead of a topic map, and every study mode points to the Content page.

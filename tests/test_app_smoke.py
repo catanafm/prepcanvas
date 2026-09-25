@@ -255,6 +255,20 @@ def test_variant_sittings_are_recorded_and_the_next_new_variant_is_offered(tmp_p
     assert "6 questions" in sittings_markup
 
 
+def test_export_is_offered_for_user_subjects_only(tmp_path, monkeypatch):
+    _, app = start(tmp_path, monkeypatch)
+    create_subject(app, "Statistics 101")
+    open_page(app, "Settings")
+    button(app, "prepare_export").click().run()
+    assert len(app.exception) == 0
+    assert any(item.label == "Download subject archive" for item in app.get("download_button"))
+    button(app, "back_to_library").click().run()
+    assert any("Import a subject from another computer" in item.label for item in app.expander)
+    open_subject(app)
+    open_page(app, "Settings")
+    assert not any(item.key == "prepare_export" for item in app.button)
+
+
 def test_sample_subject_content_page_is_read_only(tmp_path, monkeypatch):
     _, app = start(tmp_path, monkeypatch)
     open_subject(app)

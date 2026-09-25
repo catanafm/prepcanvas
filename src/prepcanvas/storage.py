@@ -256,6 +256,68 @@ class StudyStore:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    def export_subject(self, subject_id: str) -> dict:
+        """Everything the database knows about a subject, ready to be written to an archive."""
+        subject = self.get_subject(subject_id)
+        if subject is None:
+            raise KeyError(f"Unknown subject '{subject_id}'")
+        attempts = [
+            {key: value for key, value in row.items() if key not in ("id", "subject_id")}
+            for row in reversed(self.list_attempts(subject_id))
+        ]
+        return {"subject": subject, "profile": self.get_profile(subject_id), "attempts": attempts}
+
+    def import_subject(self, payload: dict):
+        """Insert a subject exported by `export_subject`, always as a user subject."""
+        subject = payload["subject"]
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO subjects (id, name, description, exam_date, target_score, materials_json, is_demo, created_at, status)
+                VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+                """,
+                (
+                    subject["id"],
+                    subject["name"],
+                    subject.get("description", ""),
+                    subject.get("exam_date"),
+                    subject.get("target_score", 80),
+                    json.dumps(subject.get("materials", {})),
+                    subject.get("created_at") or self._now(),
+                    subject.get("status", "active"),
+                ),
+            )
+            for row in payload.get("attempts", []):
+                connection.execute(
+                    """
+                    INSERT INTO attempts (subject_id, mode, topic_id, question_id, score, max_score, is_answered,
+                                          confidence, created_at, sitting, exam_set, exam_variant)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        subject["id"],
+                        row["mode"],
+                        row.get("topic_id"),
+                        row.get("question_id"),
+                        row["score"],
+                        row["max_score"],
+                        int(row.get("is_answered", 1)),
+                        row.get("confidence"),
+                        row.get("created_at") or self._now(),
+                        row.get("sitting"),
+                        row.get("exam_set"),
+                        row.get("exam_variant"),
+                    ),
+                )
+        profile = payload.get("profile")
+        if profile:
+            self.save_profile(
+                subject["id"],
+                {"id": profile["strategy_id"], "name": profile["strategy_name"], "description": profile["description"]},
+                profile["diagnostic_score"],
+                profile["confidence"],
+            )
+
     def list_attempts(self, subject_id: str) -> list:
         with self._connect() as connection:
             rows = connection.execute(
