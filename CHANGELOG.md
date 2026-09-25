@@ -15,6 +15,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Subject tabs are ordered by use: Overview, Learn, Practice, Mock exam, Progress, then Diagnostic, Content, and Settings (TASK-034).
 - Creating a subject asks only for a name, exam date, and target, then opens the Content page; the material checkboxes are gone, materials are real files now (TASK-028).
 - README, architecture, and roadmap describe the build-time AI approach and state that the app sends nothing anywhere while the assistant you choose receives your materials under your own account (TASK-028).
 - The sidebar subject dropdown is replaced by the library; inside a subject, *← All subjects* returns home and the *Subjects* tab became per-subject *Settings* (TASK-023).
