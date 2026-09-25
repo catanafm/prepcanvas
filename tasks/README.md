@@ -23,6 +23,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-023](TASK-023-subject-library.md) | Add a subject library home screen | feature | high | done |
 | [TASK-024](TASK-024-removable-sample-subject.md) | Treat the demo as a removable sample subject | feature | high | done |
 | [TASK-025](TASK-025-subject-content-packages.md) | Store study content for user subjects as validated local packages | feature | high | done |
+| [TASK-027](TASK-027-build-skill.md) | Ship an Agent Skill that builds subject packages with the learner's own assistant | feature | high | done |
 | [TASK-012](TASK-012-local-material-upload.md) | Upload study materials by role in a new-subject wizard | feature | high | backlog |
 | [TASK-013](TASK-013-source-preview-classification.md) | Extract text locally and preview each source | feature | high | backlog |
 | [TASK-026](TASK-026-questions-from-practice-exam.md) | Build questions and rubrics from a practice exam and its answer key | feature | high | backlog |
