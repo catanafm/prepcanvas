@@ -26,6 +26,7 @@ from prepcanvas.packages import MATERIAL_SUFFIXES, SubjectFiles, content_summary
 from prepcanvas.prompts import SKILL_NAME, agent_request, chat_prompt, display_path
 from prepcanvas.readiness import calculate_readiness, next_best_action
 from prepcanvas.storage import StudyStore
+from prepcanvas.transfer import ArchiveError, SubjectExists, export_subject, import_subject, inspect_archive
 
 
 st.set_page_config(page_title="PrepCanvas", page_icon="◉", layout="wide")
@@ -303,6 +304,36 @@ def render_library(records: list):
     if store.sample_removed():
         st.caption("Want to see how PrepCanvas works with ready-made content?")
         st.button("Add sample subject", key="add_sample", type="tertiary", on_click=restore_sample)
+    render_import()
+
+
+def render_import():
+    """Restore a subject exported from another computer."""
+    with st.expander("Import a subject from another computer"):
+        st.caption("Choose a subject archive exported from PrepCanvas Settings. Materials, content, and progress come with it.")
+        with st.form("import_form", clear_on_submit=True):
+            upload = st.file_uploader("Subject archive", type=["zip"])
+            replace = st.checkbox("Replace a subject with the same id, including its progress")
+            submitted = st.form_submit_button("Import subject")
+        if submitted:
+            if upload is None:
+                st.warning("Choose an archive first.")
+                return
+            data = upload.getvalue()
+            try:
+                summary = inspect_archive(data)
+                subject_id = import_subject(store, files, data, replace=replace)
+            except ArchiveError as error:
+                st.error(str(error))
+            except SubjectExists as error:
+                st.error(f"A subject with id “{error}” already exists. Tick the replace option to overwrite it, including its progress.")
+            else:
+                open_subject(subject_id)
+                st.session_state["flash"] = (
+                    f'Imported “{summary["name"]}”: {summary["materials"]} material file(s), '
+                    f'{"study content" if summary["has_package"] else "no content yet"}, {summary["attempts"]} saved answers.'
+                )
+                st.rerun()
 
 
 def render_new_subject(records: list):
@@ -916,6 +947,23 @@ else:
             st.session_state["flash"] = f'“{item["name"]}” moved to Completed.'
             open_library()
             st.rerun()
+
+    if not item["is_demo"]:
+        st.subheader("Move to another computer")
+        st.write(
+            "Export this subject as one archive with its materials, study content, and progress, then import it "
+            "from the library on the other computer."
+        )
+        if st.button("Prepare export", key="prepare_export"):
+            st.session_state["export"] = (item["id"], export_subject(store, files, item["id"]))
+        if st.session_state.get("export", (None,))[0] == item["id"]:
+            st.download_button(
+                "Download subject archive",
+                data=st.session_state["export"][1],
+                file_name=f'{item["id"]}-prepcanvas.zip',
+                mime="application/zip",
+                key="download_export",
+            )
 
     st.subheader("Manage data")
     removes = "its saved answers and coaching profile, or the sample itself" if item["is_demo"] else "the subject and all of its progress"
