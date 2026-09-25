@@ -7,14 +7,18 @@ PrepCanvas is a small local Streamlit application with deterministic domain logi
 ```text
 Streamlit UI
     │
-    ├── catalog.py       synthetic demo content
+    ├── catalog.py       bundled sample subject
+    ├── packages.py      subject package schema, validator, private files
+    ├── prompts.py       build instructions for AI assistants
     ├── coaching.py      diagnostic strategy selection
     ├── grading.py       deterministic answer scoring
     ├── readiness.py     transparent mastery heuristic
     └── storage.py       subjects, attempts, profiles
              │
-          SQLite
+      SQLite + data/private/
 ```
+
+`cli.py` exposes `python -m prepcanvas validate` and `python -m prepcanvas prompt` for use outside the app.
 
 ## Data boundaries
 
@@ -32,9 +36,26 @@ Local, ignored data:
 - parsed source artifacts;
 - secrets and provider configuration.
 
-## Why deterministic first
+## Why deterministic at runtime
 
-The first public version works without an AI key. This makes setup reproducible, protects privacy, and keeps grading behavior testable. Later AI providers should implement explicit interfaces and return source citations; they should not replace the storage, readiness, or practice workflow.
+The app works without an AI key. This makes setup reproducible, protects privacy, and keeps grading behavior testable. AI is used once, at build time, to turn a learner's materials into a subject package; from then on grading, readiness, and coaching are deterministic and offline.
+
+## Subject packages and the build step
+
+Every subject, the bundled sample included, gets its study content from one validated JSON file described in [subject-package.md](subject-package.md). User packages live in `data/private/subjects/<subject-id>/package.json`, next to the learner's materials and a `brief.json` written by the app.
+
+```text
+materials/  ──►  learner's own AI assistant  ──►  package.json  ──►  validator  ──►  app
+                 (CLI agent via the repository skill,
+                  or a chat assistant via the copied prompt)
+```
+
+- The repository ships an Agent Skill, `.claude/skills/prepcanvas-build/SKILL.md`, that any CLI coding agent can follow; `AGENTS.md` points to it for agents without skill support.
+- For chat assistants, the app builds a prompt from the same schema document and imports the JSON reply.
+- `packages.validate_package` is the contract: structural checks, cross-references, and a rubric self-check that grades every `model_answer` with `grading.grade_question` and rejects rubrics the model answer itself cannot satisfy. Errors block loading; warnings are shown on the Content page.
+- Questions carry `origin`, `source` or `generated`, so the mock exam can replay the original practice exam or a generated variant.
+
+PrepCanvas itself sends nothing anywhere. The assistant the learner chooses receives the materials under the learner's own account, and the UI says so next to the build instructions.
 
 ## Rubric grading
 
@@ -52,17 +73,6 @@ For each topic, PrepCanvas keeps only the latest answered attempt per question. 
 
 Overall readiness is the mean of topic mastery. A subject is marked ready only when the target score is reached and every topic has evidence.
 
-## Planned ingestion boundary
+## Data flow inside the app
 
-Future source ingestion will produce a normalized subject package:
-
-```text
-subject metadata
-topics[]
-source references[]
-learning notes[]
-questions[]
-rubrics[]
-```
-
-The UI and progress model should consume this normalized representation rather than depend on a particular institution's PDF layout.
+The UI never reads materials. It loads the package through `SubjectFiles.load_package`, merges the database record (name, exam date, target, status) with the package content (topics, questions, sources), and passes the result to the same catalog, grading, and readiness code the sample uses. A subject without a valid package shows a setup checklist instead of a topic map, and every study mode points to the Content page.

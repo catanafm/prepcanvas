@@ -1,3 +1,5 @@
+import json
+
 from streamlit.testing.v1 import AppTest
 
 from prepcanvas.catalog import load_demo_subject
@@ -10,7 +12,15 @@ DEMO_ID = "sustainable-business-demo"
 def start(tmp_path, monkeypatch, name="app.sqlite3"):
     database = tmp_path / name
     monkeypatch.setenv("PREPCANVAS_DB_PATH", str(database))
+    monkeypatch.setenv("PREPCANVAS_PRIVATE_DIR", str(tmp_path / "private"))
     return database, AppTest.from_file("app/streamlit_app.py", default_timeout=10).run()
+
+
+def write_package(tmp_path, subject_id, package):
+    folder = tmp_path / "private" / "subjects" / subject_id
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "package.json").write_text(json.dumps({**package, "id": subject_id}), encoding="utf-8")
+    return folder
 
 
 def button(app, key):
@@ -51,9 +61,19 @@ def test_every_primary_screen_renders_without_exceptions(tmp_path, monkeypatch):
     _, app = start(tmp_path, monkeypatch)
     open_subject(app)
     assert len(app.exception) == 0
-    for page in ["Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Settings", "Overview"]:
+    for page in ["Content", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Settings", "Overview"]:
         open_page(app, page)
         assert len(app.exception) == 0, f"{page} failed to render"
+
+
+def test_every_screen_renders_for_a_subject_without_content(tmp_path, monkeypatch):
+    _, app = start(tmp_path, monkeypatch)
+    create_subject(app, "Statistics 101")
+    for page in ["Overview", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Settings", "Content"]:
+        open_page(app, page)
+        assert len(app.exception) == 0, f"{page} failed to render"
+        if page in {"Diagnostic", "Learn", "Practice", "Mock exam"}:
+            assert button(app, "needs_content").label == "Set up study content"
 
 
 def test_back_to_library_and_into_another_subject_resets_the_page(tmp_path, monkeypatch):
@@ -107,17 +127,91 @@ def test_overview_counts_distinct_questions_per_topic(tmp_path, monkeypatch):
     assert any("Systems thinking** · 33% mastery" in item.value for item in app.markdown)
 
 
-def test_created_subject_is_confirmed_and_opened(tmp_path, monkeypatch):
+def test_created_subject_opens_on_the_content_page_with_a_brief(tmp_path, monkeypatch):
     _, app = start(tmp_path, monkeypatch)
     create_subject(app, "Statistics 101")
 
     assert len(app.exception) == 0
     assert app.toast[0].value.startswith("Subject “Statistics 101” created.")
-    assert "later release" in app.toast[0].value
+    assert "add your materials" in app.toast[0].value
     assert any("Statistics 101" in item.value for item in app.markdown if 'class="subject-bar"' in item.value)
+    assert next(radio for radio in app.radio if radio.key == "page").value == "Content"
+    assert [item.value for item in app.subheader] == ["1 · Materials", "2 · Build the study content", "3 · Check the result"]
+    assert any("No package yet" in info.value for info in app.info)
+    brief = json.loads((tmp_path / "private" / "subjects" / "statistics-101" / "brief.json").read_text(encoding="utf-8"))
+    assert brief["name"] == "Statistics 101" and brief["target_score"] == 80
 
     open_page(app, "Progress")
     assert len(app.toast) == 0
+
+
+def test_overview_without_content_shows_the_setup_checklist(tmp_path, monkeypatch):
+    _, app = start(tmp_path, monkeypatch)
+    create_subject(app, "Statistics 101")
+    open_page(app, "Overview")
+    panel = next(item.value for item in app.markdown if "Set up study content" in item.value)
+    assert "1 · Materials: no files yet" in panel
+    assert "2 · Study content: no package.json yet" in panel
+    assert button(app, "open_content").label == "Open Content"
+    button(app, "open_content").click().run()
+    assert next(radio for radio in app.radio if radio.key == "page").value == "Content"
+
+
+def test_user_subject_with_a_valid_package_is_fully_studyable(tmp_path, monkeypatch, demo_subject):
+    write_package(tmp_path, "statistics-101", demo_subject)
+    _, app = start(tmp_path, monkeypatch)
+    create_subject(app, "Statistics 101")
+    assert any("Study content loaded: 4 topics · 12 questions" in item.value for item in app.success)
+    assert button(app, "start_diagnostic")
+
+    open_page(app, "Overview")
+    assert any("Systems thinking** · 0% mastery" in item.value for item in app.markdown)
+
+    open_page(app, "Diagnostic")
+    for radio in app.radio:
+        if radio.key.startswith("diagnostic_"):
+            radio.set_value(radio.options[0]).run()
+    next(item for item in app.button if item.label == "Build my learning profile").click().run()
+    assert any("Your starting strategy" in item.value for item in app.success)
+
+    open_page(app, "Progress")
+    assert len(app.exception) == 0
+    assert any("Saved answers" in item.value and ">4<" in item.value for item in app.markdown)
+
+
+def test_invalid_package_is_explained_on_the_content_page(tmp_path, monkeypatch, demo_subject):
+    demo_subject["questions"][0]["correct_answer"] = "not an option"
+    write_package(tmp_path, "statistics-101", demo_subject)
+    _, app = start(tmp_path, monkeypatch)
+    create_subject(app, "Statistics 101")
+    assert len(app.exception) == 0
+    assert any("could not be loaded" in item.value for item in app.error)
+    assert any("$.questions[0].correct_answer" in item.value for item in app.error)
+    button(app, "back_to_library").click().run()
+    assert any("Study content has errors" in item.value for item in app.markdown)
+
+
+def test_mock_exam_can_be_limited_to_source_or_generated_questions(tmp_path, monkeypatch, demo_subject):
+    for question in demo_subject["questions"]:
+        if question["topic_id"] == "carbon-basics":
+            question["origin"] = "generated"
+    write_package(tmp_path, "statistics-101", demo_subject)
+    _, app = start(tmp_path, monkeypatch)
+    create_subject(app, "Statistics 101")
+    open_page(app, "Mock exam")
+    exam_set = next(radio for radio in app.radio if radio.key == "mock_exam_set")
+    assert exam_set.value == "source"
+    assert sum(1 for radio in app.radio if radio.key.startswith("exam_")) + len(app.text_area) == 9
+    exam_set.set_value("generated").run()
+    assert sum(1 for radio in app.radio if radio.key.startswith("exam_")) + len(app.text_area) == 3
+
+
+def test_sample_subject_content_page_is_read_only(tmp_path, monkeypatch):
+    _, app = start(tmp_path, monkeypatch)
+    open_subject(app)
+    open_page(app, "Content")
+    assert any("Sample content: 4 topics" in item.value for item in app.success)
+    assert app.subheader == [] or not any("Materials" in item.value for item in app.subheader)
 
 
 def test_completed_subjects_move_to_their_own_group_and_can_reopen(tmp_path, monkeypatch):

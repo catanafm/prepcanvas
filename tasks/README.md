@@ -23,21 +23,26 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-023](TASK-023-subject-library.md) | Add a subject library home screen | feature | high | done |
 | [TASK-024](TASK-024-removable-sample-subject.md) | Treat the demo as a removable sample subject | feature | high | done |
 | [TASK-025](TASK-025-subject-content-packages.md) | Store study content for user subjects as validated local packages | feature | high | done |
+| [TASK-012](TASK-012-local-material-upload.md) | Add study materials to a subject from the Content page | feature | high | done |
 | [TASK-027](TASK-027-build-skill.md) | Ship an Agent Skill that builds subject packages with the learner's own assistant | feature | high | done |
-| [TASK-012](TASK-012-local-material-upload.md) | Upload study materials by role in a new-subject wizard | feature | high | backlog |
-| [TASK-013](TASK-013-source-preview-classification.md) | Extract text locally and preview each source | feature | high | backlog |
-| [TASK-026](TASK-026-questions-from-practice-exam.md) | Build questions and rubrics from a practice exam and its answer key | feature | high | backlog |
-| [TASK-014](TASK-014-topic-map-citations.md) | Build a topic map with citations from the workbook | feature | high | backlog |
+| [TASK-028](TASK-028-content-page.md) | Guide a new subject from creation to study content on a Content page | feature | high | done |
+| [TASK-026](TASK-026-questions-from-practice-exam.md) | Build questions and rubrics from a practice exam and its answer key | feature | high | done |
+| [TASK-029](TASK-029-mock-exam-sets.md) | Let the mock exam replay the practice exam or a generated variant | feature | medium | done |
+| [TASK-013](TASK-013-source-preview-classification.md) | Cache extracted text so every agent can read PDF and DOCX materials | feature | medium | backlog |
+| [TASK-014](TASK-014-topic-map-citations.md) | Show structured citations for topics and questions | feature | medium | backlog |
+| [TASK-030](TASK-030-run-agent-from-app.md) | Run an installed CLI agent from the Content page | feature | medium | backlog |
+| [TASK-031](TASK-031-readme-media-subject-flow.md) | Refresh README media for the subject flow | docs | medium | backlog |
 | [TASK-015](TASK-015-spaced-review.md) | Add spaced review scheduling | feature | low | backlog |
-| [TASK-016](TASK-016-local-model-provider.md) | Add an optional local-model provider interface | feature | low | backlog |
-| [TASK-017](TASK-017-cloud-model-provider.md) | Add an opt-in cloud AI provider interface | feature | low | backlog |
 | [TASK-018](TASK-018-validate-readiness.md) | Validate readiness against mock-exam trends | feature | low | backlog |
 | [TASK-019](TASK-019-raise-python-minimum.md) | Raise the minimum Python version to 3.11 | chore | low | backlog |
+| [TASK-016](TASK-016-local-model-provider.md) | Build packages fully offline with a local model | feature | low | backlog |
+| [TASK-017](TASK-017-cloud-model-provider.md) | Add an opt-in cloud AI provider interface | feature | low | cancelled |
 
 ## Milestones
 
 - **v0.1.0 — Trustworthy demo:** TASK-002 → TASK-011 · released 2026-09-23
 - **v0.1.1 — Presentation polish:** TASK-020 → TASK-022 · released 2026-09-24
-- **v0.2.0 — Real subjects:** TASK-023 → TASK-014 (library, sample subject, content packages, upload wizard, local extraction, questions and topics from your own files)
-- **v0.3.0 — Study smarter:** TASK-015, TASK-016, TASK-018, TASK-019
-- **v0.4.0 — Optional cloud AI:** TASK-017
+- **v0.2.0 — Real subjects:** TASK-023 → TASK-029 (library, sample subject, packages, materials, build skill, Content page, exam sets)
+- **v0.3.0 — Smoother building:** TASK-013, TASK-014, TASK-030, TASK-031
+- **v0.4.0 — Study smarter:** TASK-015, TASK-018, TASK-019
+- **Later:** TASK-016

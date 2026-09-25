@@ -46,7 +46,7 @@ docs(tasks): add task board and contribution workflow (TASK-001)
 ```
 
 - `type` matches the task type (`feature` → `feat`).
-- `scope` is the affected area: `grading`, `readiness`, `storage`, `ui`, `coaching`, `ci`, `docs`, `tasks`.
+- `scope` is the affected area: `grading`, `readiness`, `storage`, `packages`, `ai`, `ui`, `coaching`, `ci`, `docs`, `tasks`.
 - Keep the subject under 72 characters; explain the *why* in the body when it is not obvious.
 
 ## 4. Pull requests

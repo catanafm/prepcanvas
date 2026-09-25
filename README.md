@@ -2,6 +2,8 @@
 
 PrepCanvas is a local-first exam preparation companion that turns a subject into a clear study path: diagnose what you know, learn with a coaching flow, practise retrieval, and track readiness over time.
 
+Your own subjects are built from your own materials by the AI assistant you already use, Claude Code, Codex, Gemini CLI, or a chat assistant, through a repository skill and a validated content package. No API key, no metered tokens, and nothing leaves your computer unless you hand it to your assistant.
+
 The public repository ships with a fully synthetic subject, **Sustainable Business Fundamentals**. No university course material, personal answers, or private transcripts are included.
 
 ![PrepCanvas overview with readiness, topic coverage, next best action, and topic map](docs/media/overview.png)
@@ -34,7 +36,9 @@ PrepCanvas brings those decisions into one local workspace.
 
 - subject library with in-progress and completed subjects, exam countdowns, and progress at a glance
 - multi-subject local workspace for metadata and progress isolation
-- material inventory for each subject
+- your own subjects: add materials, build the study content with your own AI assistant, review it, and study
+- one validated subject package format shared by the sample and your subjects, with a CLI validator
+- mock exam limited to the practice exam from your materials or to generated variants
 - synthetic demo course with four topics and twelve questions
 - short diagnostic that selects a starting coaching strategy
 - guided topic explanations, examples, common traps, and recall checks
@@ -42,7 +46,7 @@ PrepCanvas brings those decisions into one local workspace.
 - mock exam with delayed feedback
 - SQLite progress storage isolated by subject
 - transparent readiness, coverage, and study-session estimates
-- no API key required
+- no API key required, at any step
 
 ## Product principles
 
@@ -80,9 +84,31 @@ pip install -r requirements.txt
 PYTHONPATH=src streamlit run app/streamlit_app.py
 ```
 
+## Your own subjects
+
+Study content is built once, outside the app, from your materials. After that everything runs locally and deterministically.
+
+1. **Create the subject** in the library: name, exam date, target.
+2. **Add materials** on the subject's *Content* page: workbook, practice exam, answer key, notes (PDF, TXT, Markdown, DOCX). They are stored in `data/private/subjects/<subject-id>/materials/`, which Git ignores.
+3. **Build the content** with the assistant you already have:
+   - *Coding agent in a terminal.* Open the PrepCanvas folder in Claude Code, Codex, Gemini CLI, or any agent that reads `AGENTS.md`, and ask it to build the subject. The `prepcanvas-build` skill in [`.claude/skills/`](.claude/skills/prepcanvas-build/SKILL.md) tells it how to read the materials, write `package.json`, and run the validator until it passes.
+   - *Chat assistant.* Copy the prompt shown in the app into ChatGPT, Claude, or Gemini together with your files, save the JSON reply as `package.json`, and import it in the app.
+   - *By hand.* Write `package.json` following [docs/subject-package.md](docs/subject-package.md).
+4. **Check the result.** The app validates the package, explains every error, and shows the topics and questions for review. Then take the diagnostic.
+
+The package holds topics, questions taken from your practice exam (`origin: source`), similar generated questions (`origin: generated`), and grading rubrics. The validator grades every model answer against its own rubric, so a rubric that a perfect answer cannot satisfy never reaches you.
+
+```bash
+PYTHONPATH=src python -m prepcanvas validate data/private/subjects/<subject-id>/package.json
+```
+
+**Privacy.** PrepCanvas sends nothing anywhere. The assistant you choose receives your materials under your own account and its own terms; the app says so next to the build instructions, and you can stay fully offline by writing the package yourself. Assistant subscriptions and free tiers change their limits from time to time, so check yours before building a large subject.
+
 ## Repository structure
 
 ```text
+.claude/skills/
+  prepcanvas-build/       Agent Skill that builds a subject package from materials
 .github/
   workflows/ci.yml        Tests and privacy checks
   pull_request_template.md
@@ -94,26 +120,30 @@ docs/
   product-brief.md
   research-notes.md
   roadmap.md
+  subject-package.md      Package schema and validation rules
 src/prepcanvas/
-  demo_data/              Synthetic source and derived demo dataset
-  catalog.py              Demo content loading
+  demo_data/              Synthetic source and derived sample package
+  catalog.py              Sample content loading
+  cli.py                  `python -m prepcanvas validate | prompt`
   library.py              Library screen helpers
   coaching.py             Diagnostic-to-strategy rules
   grading.py              Deterministic grading
+  packages.py             Package schema, validator, private subject files
+  prompts.py              Build instructions for AI assistants
   readiness.py            Readiness heuristics
   storage.py              SQLite persistence
 tasks/                    Task board and task files (TASK-NNN)
 tests/
 ```
 
-Runtime data is created in `data/local/` and ignored by Git.
+Runtime data is created in `data/local/` (progress database) and `data/private/` (materials and packages); both are ignored by Git.
 
 ## Current limitations
 
-- The bundled synthetic demo is the only study-ready subject in this release.
-- Newly created subjects currently store metadata and material availability only; local document ingestion is the next product iteration.
-- Questions and rubrics in the demo dataset are pre-authored from the bundled synthetic source rather than generated at runtime.
+- Building study content needs an AI assistant that can read your files; agents that cannot open PDF or DOCX files need the materials as text until the extraction cache lands.
+- Short answers are graded by deterministic rubrics, so unusual but correct phrasing can be under-scored; the model answer is always shown.
 - The readiness estimate is a planning heuristic and has not yet been calibrated against real exam outcomes.
+- README screenshots still show the previous subject creation flow.
 
 ## Privacy and content safety
 
@@ -126,7 +156,9 @@ The repository intentionally excludes:
 - generated artifacts containing source text
 - environment files and API keys
 
-The bundled demo course is original synthetic content created specifically for this repository. Its canonical source is [the synthetic workbook](src/prepcanvas/demo_data/sustainable_business_source.md); the adjacent JSON file contains the derived topics, questions, rubrics, and source labels used by the app.
+The bundled demo course is original synthetic content created specifically for this repository. Its canonical source is [the synthetic workbook](src/prepcanvas/demo_data/sustainable_business_source.md); the adjacent JSON file is a subject package with the derived topics, questions, rubrics, and source labels used by the app.
+
+The app itself makes no network requests. Building study content with an AI assistant is your choice and happens under your own account; PrepCanvas only reads the resulting `package.json`.
 
 ## Readiness model
 
@@ -143,7 +175,7 @@ The session estimate is a planning aid, not a prediction guarantee. A later iter
 
 ## Roadmap
 
-Near-term work includes source upload and ingestion, richer topic diagnostics, spaced review, a more polished visual system, and exportable progress summaries. Optional local and cloud AI providers are planned after the deterministic workflow is reliable. Voice practice remains an exploratory future feature.
+Near-term work includes a local text-extraction cache for materials, structured citations, running an installed CLI agent from the app, spaced review, and refreshed README media. Fully offline builds through a local model remain optional. Voice practice remains an exploratory future feature.
 
 See [docs/roadmap.md](docs/roadmap.md) for the staged plan and the [task board](tasks/README.md) for the concrete, prioritized backlog.
 
