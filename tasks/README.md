@@ -28,6 +28,10 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-028](TASK-028-content-page.md) | Guide a new subject from creation to study content on a Content page | feature | high | done |
 | [TASK-026](TASK-026-questions-from-practice-exam.md) | Build questions and rubrics from a practice exam and its answer key | feature | high | done |
 | [TASK-029](TASK-029-mock-exam-sets.md) | Let the mock exam replay the practice exam or a generated variant | feature | medium | done |
+| [TASK-034](TASK-034-tab-order.md) | Order subject tabs by how often they are used | fix | medium | done |
+| [TASK-033](TASK-033-material-triage.md) | Triage materials before building so only study material becomes content | feature | high | in-progress |
+| [TASK-032](TASK-032-exam-variants.md) | Compose numbered mock-exam variants from a question pool and an exam blueprint | feature | high | in-progress |
+| [TASK-035](TASK-035-subject-export-import.md) | Export a subject with its progress and import it on another computer | feature | medium | in-progress |
 | [TASK-013](TASK-013-source-preview-classification.md) | Cache extracted text so every agent can read PDF and DOCX materials | feature | medium | backlog |
 | [TASK-014](TASK-014-topic-map-citations.md) | Show structured citations for topics and questions | feature | medium | backlog |
 | [TASK-030](TASK-030-run-agent-from-app.md) | Run an installed CLI agent from the Content page | feature | medium | backlog |
@@ -43,6 +47,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 - **v0.1.0 — Trustworthy demo:** TASK-002 → TASK-011 · released 2026-09-23
 - **v0.1.1 — Presentation polish:** TASK-020 → TASK-022 · released 2026-09-24
 - **v0.2.0 — Real subjects:** TASK-023 → TASK-029 (library, sample subject, packages, materials, build skill, Content page, exam sets)
+- **v0.2.1 — Exam variants:** TASK-034, TASK-033, TASK-032, TASK-035
 - **v0.3.0 — Smoother building:** TASK-013, TASK-014, TASK-030, TASK-031
 - **v0.4.0 — Study smarter:** TASK-015, TASK-018, TASK-019
 - **Later:** TASK-016

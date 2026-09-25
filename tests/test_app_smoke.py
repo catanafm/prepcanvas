@@ -66,6 +66,13 @@ def test_every_primary_screen_renders_without_exceptions(tmp_path, monkeypatch):
         assert len(app.exception) == 0, f"{page} failed to render"
 
 
+def test_tabs_put_study_modes_before_setup_pages(tmp_path, monkeypatch):
+    _, app = start(tmp_path, monkeypatch)
+    open_subject(app)
+    tabs = next(radio for radio in app.radio if radio.key == "page").options
+    assert tabs == ["Overview", "Learn", "Practice", "Mock exam", "Progress", "Diagnostic", "Content", "Settings"]
+
+
 def test_every_screen_renders_for_a_subject_without_content(tmp_path, monkeypatch):
     _, app = start(tmp_path, monkeypatch)
     create_subject(app, "Statistics 101")

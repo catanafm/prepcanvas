@@ -185,7 +185,8 @@ def render_feedback(question: dict, result: dict):
     render_source(question["source"])
 
 
-PAGES = ["Overview", "Content", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Settings"]
+# Ordered by how often a learner needs them: study modes first, one-off setup pages last.
+PAGES = ["Overview", "Learn", "Practice", "Mock exam", "Progress", "Diagnostic", "Content", "Settings"]
 
 
 def open_subject(subject_id: str):
