@@ -37,3 +37,7 @@ Follow [CONTRIBUTING.md](CONTRIBUTING.md). In short:
 - Before finishing: tests pass, acceptance criteria are checked off, task status and board are updated, and `CHANGELOG.md` lists user-visible changes.
 - Write all code, docs, commits, and task files in English.
 - Experiment with `PREPCANVAS_DB_PATH` pointing to a temporary database so real study progress is never modified.
+
+# Building study content for a subject
+
+Learners build the study content of their own subjects with the AI agent they already use. The instructions live in [`.claude/skills/prepcanvas-build/SKILL.md`](.claude/skills/prepcanvas-build/SKILL.md) and work for any agent: read the materials in `data/private/subjects/<subject-id>/materials/`, write `package.json` following [`docs/subject-package.md`](docs/subject-package.md), and run `python -m prepcanvas validate` until it passes. Everything under `data/private/` is the learner's private material: never copy it into the repository.
