@@ -40,7 +40,7 @@ Errors block loading; warnings are advice. The app runs the same validation ever
 {"id": "workbook", "role": "workbook", "title": "Course workbook", "file": "materials/workbook.pdf"}
 ```
 
-`role` is one of `workbook`, `practice_exam`, `answer_key`, `notes`, `transcript`, `other`. `file` is optional and relative to the subject folder.
+`role` is one of `workbook`, `practice_exam`, `answer_key`, `notes`, `transcript`, `other`. `file` is optional and relative to the subject folder. List exactly the files the content was built from: a file that was excluded as not study material does not belong here, and the validator warns about a listed file that does not exist.
 
 ## Topics
 

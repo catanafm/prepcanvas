@@ -128,6 +128,19 @@ def test_topic_coverage_produces_errors_and_warnings(demo_subject):
     assert any("systems-thinking' has 1 question(s)" in message for message in messages)
 
 
+def test_missing_source_files_are_warned_about(tmp_path, demo_subject):
+    subject = copy.deepcopy(demo_subject)
+    subject["sources"] = [{"id": "cv", "role": "other", "title": "Not here", "file": "materials/cv.pdf"}]
+    path = tmp_path / "package.json"
+    path.write_text(json.dumps(subject), encoding="utf-8")
+    package = read_package(path)
+    assert [issue["level"] for issue in package["_warnings"]] == ["warning"]
+    assert "materials/cv.pdf" in package["_warnings"][0]["message"]
+    (tmp_path / "materials").mkdir()
+    (tmp_path / "materials" / "cv.pdf").write_bytes(b"%PDF")
+    assert read_package(path)["_warnings"] == []
+
+
 def test_sources_are_validated(demo_subject):
     subject = copy.deepcopy(demo_subject)
     subject["sources"] = [{"id": "x", "role": "homework", "title": "X"}]
@@ -171,7 +184,8 @@ def test_subject_files_round_trip(tmp_path, demo_subject):
     files.save_package(subject_id, json.dumps(package).encode("utf-8"))
     status = files.load_package(subject_id)
     assert status["state"] == "valid"
-    assert status["issues"] == []
+    # The sample's source file is not in this folder, which is a warning, not an error.
+    assert [issue["path"] for issue in status["issues"]] == ["$.sources[0].file"]
     assert len(status["package"]["questions"]) == 12
     assert "_warnings" not in status["package"]
 

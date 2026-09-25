@@ -51,7 +51,8 @@ Attached materials:
 {files}
 
 What to produce
-1. Read every attachment. Identify the topics the exam covers, using the workbook or course structure as the backbone.
+0. First decide what each attachment is: course book, practice exam, answer key, notes, or transcript. Ignore anything that is not study material for this subject (a CV, an invoice, a file from another course) and tell me which files you ignored and why. If there is no course book and no practice exam, or the files belong to different courses, ask me before building.
+1. Read every kept attachment completely. Identify the topics the exam covers, using the course book structure as the backbone.
 2. Write one topic object per topic with a summary, key concepts, a worked example, a common mistake, and a coach question, all grounded in the materials and labelled with a `source`.
 3. If a practice exam or exercises are attached, turn each question into a question object with `"origin": "source"`. Use the answer key or model answers for `correct_answer`, `model_answer`, and the rubric.
 4. For every topic, add new questions in the same style with `"origin": "generated"`, so that each topic has at least three questions and at least one multiple-choice question.

@@ -180,8 +180,11 @@ def _validate_question(question, path: str, topic_ids: set, issues: list) -> Opt
     return question if ok else None
 
 
-def validate_package(data, expected_id: Optional[str] = None) -> list:
-    """Return a list of issues; the package is usable when none has level 'error'."""
+def validate_package(data, expected_id: Optional[str] = None, base_dir: Optional[Path] = None) -> list:
+    """Return a list of issues; the package is usable when none has level 'error'.
+
+    `base_dir` is the folder holding the package; when given, source files are checked to exist.
+    """
     issues = []
     if not isinstance(data, dict):
         return [_issue("error", "$", "The package must be a JSON object.")]
@@ -225,6 +228,11 @@ def validate_package(data, expected_id: Optional[str] = None) -> list:
                 },
                 issues,
             )
+            file = source.get("file")
+            if file is not None and not _text(file):
+                issues.append(_issue("error", f"{source_path}.file", "'file' must be a non-empty relative path."))
+            elif file and base_dir is not None and not (Path(base_dir) / file).is_file():
+                issues.append(_issue("warning", f"{source_path}.file", f"Source file '{file}' was not found next to the package; list only the files the content was built from."))
 
     topic_ids = []
     for index, topic in enumerate(data.get("topics") or []):
@@ -280,7 +288,7 @@ def read_package(path: Path, expected_id: Optional[str] = None) -> dict:
         raise PackageError([_issue("error", "$", f"No package found at {path}.")])
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise PackageError([_issue("error", "$", f"The package is not valid JSON: {error}")])
-    issues = validate_package(data, expected_id)
+    issues = validate_package(data, expected_id, base_dir=Path(path).parent)
     if has_errors(issues):
         raise PackageError(issues)
     data["_warnings"] = issues

@@ -10,11 +10,13 @@ You turn a learner's study materials into `data/private/subjects/<subject-id>/pa
 
 The subject id is `$ARGUMENTS` when given; otherwise take it from the request or list `data/private/subjects/`.
 
-## 1. Read the brief and the materials
+## 1. Read the brief and triage the materials
 
 - `data/private/subjects/<subject-id>/brief.json` holds the name, exam date, and target score. If it is missing, ask for the subject name and use the folder name as the id.
-- `data/private/subjects/<subject-id>/materials/` holds the files. Read every one of them completely before writing anything. Typical roles: a workbook or course book (the backbone of the topics), a practice or mock exam, an answer key or model answers, notes, transcripts.
-- If a PDF has no text layer or you cannot read a format, stop and tell the learner which file to convert; do not guess its content.
+- `data/private/subjects/<subject-id>/materials/` holds the files. **Before reading for content, open each file far enough to decide what it is** and give it one role: `workbook` (course book, lecture script), `practice_exam`, `answer_key` (master solution, model answers), `notes`, `transcript`, or *not study material*.
+- Exclude anything that is not study material for this subject: a CV, an invoice, a personal document, a file from a different course. Never build topics or questions from an excluded file, and name every excluded file with the reason in your final report.
+- Stop and ask the learner instead of building when there is no course book and no practice exam among the files, when the files clearly belong to different courses, or when the subject name in the brief does not match what the files cover.
+- Then read every kept file completely before writing anything. If a PDF has no text layer or you cannot read a format, stop and tell the learner which file to convert; do not guess its content.
 - Everything here is private. Never copy material text into the repository, tests, docs, or commit messages. The package itself is git-ignored.
 
 ## 2. Design the topics
@@ -34,7 +36,7 @@ The subject id is `$ARGUMENTS` when given; otherwise take it from the request or
 
 ## 4. Write and validate the package
 
-Follow [docs/subject-package.md](../../../docs/subject-package.md) exactly; the bundled sample `src/prepcanvas/demo_data/sustainable_business.json` is a complete example. Set `"id"` to the subject id, `schema_version` to `1`, and list the files you used in `sources`.
+Follow [docs/subject-package.md](../../../docs/subject-package.md) exactly; the bundled sample `src/prepcanvas/demo_data/sustainable_business.json` is a complete example. Set `"id"` to the subject id, `schema_version` to `1`, and list in `sources` exactly the files you used, with their roles; excluded files do not appear there.
 
 Then run, from the repository root:
 
@@ -46,4 +48,4 @@ PYTHONPATH=src python -m prepcanvas validate data/private/subjects/<subject-id>/
 
 ## 5. Report
 
-Tell the learner: how many topics and questions you produced, how many came from the materials and how many are generated, what you could not use, and any warnings left. Ask them to open the subject's **Content** page in PrepCanvas and review the topics and questions before studying. Do not modify anything under `src/`, `app/`, or `tests/` for this task.
+Tell the learner: which files you used in which role and which you excluded and why, how many topics and questions you produced, how many came from the materials and how many are generated, what you could not use, and any warnings left. Ask them to open the subject's **Content** page in PrepCanvas and review the topics and questions before studying. Do not modify anything under `src/`, `app/`, or `tests/` for this task.

@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- The build skill and the chat prompt triage the materials first: every file gets a role, files that are not study material for the subject are excluded and named in the report, and the agent asks instead of building when no course book or practice exam is present. The validator warns about a listed source file that does not exist (TASK-033).
 - Your own subjects are now studyable: a subject *Content* page to add materials (PDF, TXT, Markdown, DOCX) into a private per-subject folder, build the study content with the AI assistant you already use, import a package, and review the validation result and every topic and question. The Overview shows a setup checklist until content loads, and every study mode links to the Content page (TASK-012, TASK-028).
 - A documented subject package format shared by the sample and user subjects, with `python -m prepcanvas validate` and in-app validation: structural checks, cross-references, and a rubric self-check that rejects rubrics the model answer cannot satisfy (TASK-025).
 - The `prepcanvas-build` Agent Skill and an `AGENTS.md` pointer, so Claude Code, Codex, Gemini CLI, or any agent that reads the repository can build a subject package from the materials and validate it; a copy-and-paste prompt (`python -m prepcanvas prompt`) covers chat assistants (TASK-027).

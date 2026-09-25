@@ -29,7 +29,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-026](TASK-026-questions-from-practice-exam.md) | Build questions and rubrics from a practice exam and its answer key | feature | high | done |
 | [TASK-029](TASK-029-mock-exam-sets.md) | Let the mock exam replay the practice exam or a generated variant | feature | medium | done |
 | [TASK-034](TASK-034-tab-order.md) | Order subject tabs by how often they are used | fix | medium | done |
-| [TASK-033](TASK-033-material-triage.md) | Triage materials before building so only study material becomes content | feature | high | in-progress |
+| [TASK-033](TASK-033-material-triage.md) | Triage materials before building so only study material becomes content | feature | high | done |
 | [TASK-032](TASK-032-exam-variants.md) | Compose numbered mock-exam variants from a question pool and an exam blueprint | feature | high | in-progress |
 | [TASK-035](TASK-035-subject-export-import.md) | Export a subject with its progress and import it on another computer | feature | medium | in-progress |
 | [TASK-013](TASK-013-source-preview-classification.md) | Cache extracted text so every agent can read PDF and DOCX materials | feature | medium | backlog |
