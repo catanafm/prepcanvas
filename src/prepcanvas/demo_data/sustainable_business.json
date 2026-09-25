@@ -1,4 +1,5 @@
 {
+  "schema_version": 1,
   "id": "sustainable-business-demo",
   "name": "Sustainable Business Fundamentals",
   "description": "A synthetic demo course about practical sustainability decisions in business.",
@@ -12,6 +13,14 @@
     "transcripts": false,
     "other": false
   },
+  "sources": [
+    {
+      "id": "workbook",
+      "role": "workbook",
+      "title": "Sustainable Business workbook (synthetic)",
+      "file": "sustainable_business_source.md"
+    }
+  ],
   "topics": [
     {
       "id": "systems-thinking",
@@ -60,6 +69,7 @@
       "topic_id": "systems-thinking",
       "type": "multiple_choice",
       "points": 1,
+      "origin": "source",
       "prompt": "Which question best reflects systems thinking?",
       "options": [
         "Which department owns the problem?",
@@ -76,6 +86,7 @@
       "topic_id": "systems-thinking",
       "type": "multiple_choice",
       "points": 1,
+      "origin": "source",
       "prompt": "A feedback loop exists when...",
       "options": [
         "an output of a system later influences that same system",
@@ -92,6 +103,7 @@
       "topic_id": "systems-thinking",
       "type": "short_answer",
       "points": 2,
+      "origin": "source",
       "prompt": "Why can improving one sustainability metric make the overall system worse?",
       "model_answer": "The metric may use a narrow system boundary and ignore trade-offs or unintended consequences elsewhere.",
       "rubric_points": [
@@ -118,6 +130,7 @@
       "topic_id": "stakeholder-value",
       "type": "multiple_choice",
       "points": 1,
+      "origin": "source",
       "prompt": "Which pair is most useful when prioritizing stakeholders?",
       "options": ["Age and location", "Impact and influence", "Revenue and headcount", "Urgency and job title"],
       "correct_answer": "Impact and influence",
@@ -129,6 +142,7 @@
       "topic_id": "stakeholder-value",
       "type": "multiple_choice",
       "points": 1,
+      "origin": "source",
       "prompt": "A material stakeholder interest is one that...",
       "options": ["appears in every annual report", "can meaningfully affect or be affected by the decision", "belongs to the largest group", "is easiest to quantify"],
       "correct_answer": "can meaningfully affect or be affected by the decision",
@@ -140,6 +154,7 @@
       "topic_id": "stakeholder-value",
       "type": "short_answer",
       "points": 2,
+      "origin": "source",
       "prompt": "What two questions help distinguish stakeholder impact from stakeholder influence?",
       "model_answer": "Ask how strongly the stakeholder is affected and how strongly the stakeholder can change the decision.",
       "rubric_points": [
@@ -166,6 +181,7 @@
       "topic_id": "circular-economy",
       "type": "multiple_choice",
       "points": 1,
+      "origin": "source",
       "prompt": "Which action usually preserves the most product value?",
       "options": ["Disposal", "Material recycling", "Repair and reuse", "Energy recovery"],
       "correct_answer": "Repair and reuse",
@@ -177,6 +193,7 @@
       "topic_id": "circular-economy",
       "type": "multiple_choice",
       "points": 1,
+      "origin": "source",
       "prompt": "Which business model most directly supports product return and refurbishment?",
       "options": ["One-time anonymous sale", "Product-as-a-service", "Seasonal discounting", "Cost-plus pricing"],
       "correct_answer": "Product-as-a-service",
@@ -188,6 +205,7 @@
       "topic_id": "circular-economy",
       "type": "short_answer",
       "points": 2,
+      "origin": "source",
       "prompt": "Name two design choices that can keep a product useful for longer.",
       "model_answer": "Examples include durable components and a modular design that makes repair or replacement easier.",
       "rubric_points": [
@@ -214,6 +232,7 @@
       "topic_id": "carbon-basics",
       "type": "multiple_choice",
       "points": 1,
+      "origin": "source",
       "prompt": "Fuel burned in company-owned delivery vans is usually classified as...",
       "options": ["Scope 1", "Scope 2", "Scope 3", "Avoided emissions"],
       "correct_answer": "Scope 1",
@@ -225,6 +244,7 @@
       "topic_id": "carbon-basics",
       "type": "multiple_choice",
       "points": 1,
+      "origin": "source",
       "prompt": "Emissions associated with purchased electricity are usually...",
       "options": ["Scope 1", "Scope 2", "Scope 3 only", "Outside the inventory"],
       "correct_answer": "Scope 2",
@@ -236,6 +256,7 @@
       "topic_id": "carbon-basics",
       "type": "short_answer",
       "points": 3,
+      "origin": "source",
       "prompt": "Briefly distinguish Scope 1, Scope 2, and Scope 3 emissions.",
       "model_answer": "Scope 1 is direct operational emissions, Scope 2 is purchased energy, and Scope 3 covers other value-chain emissions.",
       "rubric_points": [
