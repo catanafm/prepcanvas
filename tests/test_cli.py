@@ -42,4 +42,5 @@ def test_prompt_embeds_the_brief_materials_and_schema(capsys, tmp_path):
     assert "Target score: 75%" in out
     assert "- workbook.pdf" in out
     assert "# Subject package" in out
+    assert "Ignore anything that is not study material" in out
     assert 'Use `"id": "statistics-101"`' in out
