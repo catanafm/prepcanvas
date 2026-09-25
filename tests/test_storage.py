@@ -188,3 +188,44 @@ def test_removing_the_sample_keeps_user_subjects(tmp_path, demo_subject):
     store.create_subject("other", "Other subject", "", 75, {})
     store.remove_sample_subject(demo_subject["id"])
     assert [subject["id"] for subject in store.list_subjects()] == ["other"]
+
+
+def test_mock_exam_sittings_are_grouped_and_listed_newest_first(tmp_path, demo_subject):
+    store = StudyStore(tmp_path / "progress.sqlite3")
+    store.seed_demo_subject(demo_subject)
+    for sitting, variant, scores in (("s1", 1, (1, 0)), ("s2", 2, (1, 1))):
+        for question, score in zip(("sys-1", "sys-2"), scores):
+            store.save_attempt(
+                demo_subject["id"],
+                "mock_exam",
+                {"topic_id": "systems-thinking", "question_id": question, "score": score, "max_score": 1},
+                sitting=sitting,
+                exam_set="variant",
+                exam_variant=variant,
+            )
+    store.save_attempt(demo_subject["id"], "practice", {"topic_id": "systems-thinking", "question_id": "sys-1", "score": 1, "max_score": 1})
+    sittings = store.list_sittings(demo_subject["id"])
+    assert [(row["sitting"], row["exam_variant"], row["score"], row["max_score"], row["questions"]) for row in sittings] == [
+        ("s2", 2, 2, 2, 2),
+        ("s1", 1, 1, 2, 2),
+    ]
+    assert sittings[0]["exam_set"] == "variant"
+
+
+def test_existing_databases_gain_the_sitting_columns(tmp_path):
+    path = tmp_path / "old.sqlite3"
+    connection = sqlite3.connect(path)
+    connection.executescript(
+        """
+        CREATE TABLE subjects (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
+            exam_date TEXT, target_score INTEGER NOT NULL DEFAULT 80, materials_json TEXT NOT NULL,
+            is_demo INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL);
+        CREATE TABLE attempts (id INTEGER PRIMARY KEY AUTOINCREMENT, subject_id TEXT NOT NULL, mode TEXT NOT NULL,
+            topic_id TEXT, question_id TEXT, score INTEGER NOT NULL, max_score INTEGER NOT NULL,
+            confidence INTEGER, created_at TEXT NOT NULL);
+        """
+    )
+    connection.commit()
+    connection.close()
+    store = StudyStore(path)
+    assert store.list_sittings("anything") == []

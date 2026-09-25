@@ -180,6 +180,46 @@ def _validate_question(question, path: str, topic_ids: set, issues: list) -> Opt
     return question if ok else None
 
 
+def _validate_blueprint(data: dict, issues: list):
+    """An optional exam blueprint must be well-formed and fillable from the question pool."""
+    plan = data.get("exam_blueprint")
+    if plan is None:
+        return
+    if not isinstance(plan, dict) or not isinstance(plan.get("sections"), list) or not plan["sections"]:
+        issues.append(_issue("error", "$.exam_blueprint", "'exam_blueprint' must be an object with a non-empty 'sections' list."))
+        return
+    if "title" in plan and not _text(plan["title"]):
+        issues.append(_issue("error", "$.exam_blueprint.title", "'title' must be a non-empty string."))
+    questions = [q for q in data.get("questions") or [] if isinstance(q, dict)]
+    for index, section in enumerate(plan["sections"]):
+        path = f"$.exam_blueprint.sections[{index}]"
+        if not isinstance(section, dict):
+            issues.append(_issue("error", path, "Each section must be an object."))
+            continue
+        ok = _check_fields(
+            section,
+            path,
+            {
+                "type": (lambda v: v in QUESTION_TYPES, "one of " + ", ".join(QUESTION_TYPES)),
+                "count": (_positive_int, "a positive integer"),
+                "points": (_positive_int, "a positive integer"),
+            },
+            issues,
+        )
+        if not ok:
+            continue
+        available = sum(1 for q in questions if q.get("type") == section["type"] and q.get("points") == section["points"])
+        if available < section["count"]:
+            issues.append(
+                _issue(
+                    "error",
+                    path,
+                    f"The blueprint needs {section['count']} {section['type']} question(s) worth {section['points']} point(s) "
+                    f"but the pool has {available}; add questions with exactly these points.",
+                )
+            )
+
+
 def validate_package(data, expected_id: Optional[str] = None, base_dir: Optional[Path] = None) -> list:
     """Return a list of issues; the package is usable when none has level 'error'.
 
@@ -233,6 +273,8 @@ def validate_package(data, expected_id: Optional[str] = None, base_dir: Optional
                 issues.append(_issue("error", f"{source_path}.file", "'file' must be a non-empty relative path."))
             elif file and base_dir is not None and not (Path(base_dir) / file).is_file():
                 issues.append(_issue("warning", f"{source_path}.file", f"Source file '{file}' was not found next to the package; list only the files the content was built from."))
+
+    _validate_blueprint(data, issues)
 
     topic_ids = []
     for index, topic in enumerate(data.get("topics") or []):

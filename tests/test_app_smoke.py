@@ -100,7 +100,7 @@ def test_blank_mock_exam_is_not_saved_as_evidence(tmp_path, monkeypatch):
     open_page(app, "Mock exam")
     next(item for item in app.button if item.label == "Submit mock exam").click().run()
 
-    assert any("12 remaining" in warning.value for warning in app.warning)
+    assert any("6 remaining" in warning.value for warning in app.warning)
     assert StudyStore(database).list_attempts(DEMO_ID) == []
 
 
@@ -198,7 +198,11 @@ def test_invalid_package_is_explained_on_the_content_page(tmp_path, monkeypatch,
     assert any("Study content has errors" in item.value for item in app.markdown)
 
 
-def test_mock_exam_can_be_limited_to_source_or_generated_questions(tmp_path, monkeypatch, demo_subject):
+def exam_widgets(app):
+    return [radio for radio in app.radio if radio.key.startswith("exam_")] + list(app.text_area)
+
+
+def test_mock_exam_offers_the_original_exam_a_variant_or_everything(tmp_path, monkeypatch, demo_subject):
     for question in demo_subject["questions"]:
         if question["topic_id"] == "carbon-basics":
             question["origin"] = "generated"
@@ -207,10 +211,48 @@ def test_mock_exam_can_be_limited_to_source_or_generated_questions(tmp_path, mon
     create_subject(app, "Statistics 101")
     open_page(app, "Mock exam")
     exam_set = next(radio for radio in app.radio if radio.key == "mock_exam_set")
+    assert exam_set.options == ["Original practice exam", "Numbered variant from the question pool", "Every question"]
     assert exam_set.value == "source"
-    assert sum(1 for radio in app.radio if radio.key.startswith("exam_")) + len(app.text_area) == 9
-    exam_set.set_value("generated").run()
-    assert sum(1 for radio in app.radio if radio.key.startswith("exam_")) + len(app.text_area) == 3
+    assert len(exam_widgets(app)) == 9
+    exam_set.set_value("variant").run()
+    assert len(exam_widgets(app)) == 6
+    assert any("4 multiple choice · 2 short answer · 8 points" in item.value for item in app.caption)
+    assert next(item for item in app.number_input if item.key == "mock_variant").value == 1
+    next(radio for radio in app.radio if radio.key == "mock_exam_set").set_value("all").run()
+    assert len(exam_widgets(app)) == 12
+
+
+def sit_variant(app):
+    for radio in app.radio:
+        if radio.key.startswith("exam_"):
+            radio.set_value(radio.options[0]).run()
+    for area in app.text_area:
+        area.input("An answer that earns nothing").run()
+    next(item for item in app.button if item.label == "Submit mock exam").click().run()
+
+
+def test_variant_sittings_are_recorded_and_the_next_new_variant_is_offered(tmp_path, monkeypatch):
+    database, app = start(tmp_path, monkeypatch)
+    open_subject(app)
+    open_page(app, "Mock exam")
+    assert next(radio for radio in app.radio if radio.key == "mock_exam_set").value == "variant"
+    assert any("Variant 1 is new to you" in item.value for item in app.caption)
+    sit_variant(app)
+    assert len(app.exception) == 0
+    assert app.header[0].value.startswith("Variant 1 · ")
+    app.run()  # the sitting count above the form refreshes on the next interaction
+    assert any("You have sat variant 1 1 time(s). Variant 2 is the next new one." in item.value for item in app.caption)
+
+    sittings = StudyStore(database).list_sittings(DEMO_ID)
+    assert len(sittings) == 1 and sittings[0]["exam_variant"] == 1 and sittings[0]["questions"] == 6
+
+    button(app, "next_variant").click().run()
+    assert next(item for item in app.number_input if item.key == "mock_variant").value == 2
+    assert any("Variant 2 is new to you" in item.value for item in app.caption)
+
+    open_page(app, "Progress")
+    sittings_markup = next(item.value for item in app.markdown if "Variant 1" in item.value and 'class="activity"' in item.value)
+    assert "6 questions" in sittings_markup
 
 
 def test_sample_subject_content_page_is_read_only(tmp_path, monkeypatch):

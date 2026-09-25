@@ -21,6 +21,13 @@
       "file": "sustainable_business_source.md"
     }
   ],
+  "exam_blueprint": {
+    "title": "Sample exam",
+    "sections": [
+      { "type": "multiple_choice", "count": 4, "points": 1 },
+      { "type": "short_answer", "count": 2, "points": 2 }
+    ]
+  },
   "topics": [
     {
       "id": "systems-thinking",

@@ -38,7 +38,7 @@ PrepCanvas brings those decisions into one local workspace.
 - multi-subject local workspace for metadata and progress isolation
 - your own subjects: add materials, build the study content with your own AI assistant, review it, and study
 - one validated subject package format shared by the sample and your subjects, with a CLI validator
-- mock exam limited to the practice exam from your materials or to generated variants
+- mock exam as the original practice exam, a numbered variant composed from the question pool by the exam's blueprint (variant 4 is always the same exam, variant 5 differs), or everything; sittings listed in Progress
 - synthetic demo course with four topics and twelve questions
 - short diagnostic that selects a starting coaching strategy
 - guided topic explanations, examples, common traps, and recall checks
@@ -96,7 +96,7 @@ Study content is built once, outside the app, from your materials. After that ev
    - *By hand.* Write `package.json` following [docs/subject-package.md](docs/subject-package.md).
 4. **Check the result.** The app validates the package, explains every error, and shows the topics and questions for review. Then take the diagnostic.
 
-The package holds topics, questions taken from your practice exam (`origin: source`), similar generated questions (`origin: generated`), and grading rubrics. The validator grades every model answer against its own rubric, so a rubric that a perfect answer cannot satisfy never reaches you.
+The package holds topics, questions taken from your practice exam (`origin: source`), similar generated questions (`origin: generated`), grading rubrics, and the exam blueprint that turns the question pool into numbered mock-exam variants. The validator grades every model answer against its own rubric, so a rubric that a perfect answer cannot satisfy never reaches you.
 
 ```bash
 PYTHONPATH=src python -m prepcanvas validate data/private/subjects/<subject-id>/package.json

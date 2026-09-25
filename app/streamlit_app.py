@@ -1,4 +1,5 @@
 import os
+import random
 import re
 import sqlite3
 import sys
@@ -18,6 +19,7 @@ if str(SRC_DIR) not in sys.path:
 from prepcanvas.catalog import diagnostic_questions as select_diagnostic_questions
 from prepcanvas.catalog import get_topic, load_demo_subject
 from prepcanvas.coaching import recommend_strategy
+from prepcanvas.exams import available_sets, describe, exam_questions, next_variant
 from prepcanvas.grading import grade_question, grade_questions
 from prepcanvas.library import exam_countdown, group_subjects, last_activity
 from prepcanvas.packages import MATERIAL_SUFFIXES, SubjectFiles, content_summary
@@ -542,24 +544,46 @@ def render_content_page(item: dict, subject: dict, content: dict):
     render_result_section(item, subject, content)
 
 
-def select_exam_questions(subject: dict) -> list:
-    """Let the learner sit the practice exam from the materials, a generated variant, or everything."""
-    questions = subject["questions"]
-    origins = {question.get("origin", "source") for question in questions}
-    if len(origins) < 2:
-        return questions
-    choice = st.radio(
-        "Exam set",
-        ["source", "generated", "all"],
-        format_func=lambda value: {
-            "source": "Practice exam from your materials",
-            "generated": "New variant with generated questions",
-            "all": "Everything",
-        }[value],
-        horizontal=True,
-        key="mock_exam_set",
-    )
-    return questions if choice == "all" else [question for question in questions if question.get("origin") == choice]
+EXAM_SET_LABELS = {
+    "source": "Original practice exam",
+    "variant": "Numbered variant from the question pool",
+    "all": "Every question",
+}
+
+
+def set_variant(value: int):
+    st.session_state["mock_variant"] = value
+
+
+def select_exam(subject: dict, sittings: list) -> tuple:
+    """Let the learner pick the original exam, a numbered variant, or everything; returns (set, variant, questions)."""
+    sets = available_sets(subject)
+    if len(sets) == 1:
+        exam_set = sets[0]
+    else:
+        exam_set = st.radio("Exam set", sets, format_func=EXAM_SET_LABELS.get, horizontal=True, key="mock_exam_set")
+    variant = None
+    if exam_set == "variant":
+        sat = sorted({row["exam_variant"] for row in sittings if row["exam_set"] == "variant"})
+        st.session_state.setdefault("mock_variant", next_variant(sat))
+        number_column, next_column, random_column = st.columns([1, 1, 1], vertical_alignment="bottom")
+        variant = number_column.number_input("Variant", 1, 99, key="mock_variant")
+        next_column.button("Next new variant", key="next_variant", on_click=set_variant, args=(next_variant(sat),))
+        random_column.button("Random variant", key="random_variant", on_click=set_variant, args=(random.randint(1, 99),))
+        if variant in sat:
+            times = sum(1 for row in sittings if row["exam_set"] == "variant" and row["exam_variant"] == variant)
+            st.caption(f"You have sat variant {variant} {times} time(s). Variant {next_variant(sat)} is the next new one.")
+        else:
+            st.caption(f"Variant {variant} is new to you. Variants share a question pool, so some questions recur.")
+    questions = exam_questions(subject, exam_set, variant or 1)
+    st.caption(describe(questions))
+    return exam_set, variant, questions
+
+
+def sitting_label(row: dict) -> str:
+    if row["exam_set"] == "variant":
+        return f'Variant {row["exam_variant"]}'
+    return EXAM_SET_LABELS.get(row["exam_set"] or "", "Mock exam")
 
 
 if "flash" in st.session_state:
@@ -769,41 +793,47 @@ elif page == "Mock exam":
     if not subject["questions"]:
         render_needs_content("The mock exam uses the questions of your study content.")
     else:
-        exam_questions = select_exam_questions(subject)
-        with st.form("mock_exam"):
+        sittings = store.list_sittings(selected_id)
+        exam_set, variant, exam_set_questions = select_exam(subject, sittings)
+        exam_key = f"{exam_set}_{variant or 0}"
+        with st.form(f"mock_exam_{exam_key}"):
             exam_answers = {}
-            for index, question in enumerate(exam_questions, start=1):
+            for index, question in enumerate(exam_set_questions, start=1):
                 st.markdown(f'**{index}. {question["prompt"]}** · {question["points"]} pt')
                 if question["type"] == "multiple_choice":
                     exam_answers[question["id"]] = st.radio(
                         "Answer",
                         question["options"],
                         index=None,
-                        key=f'exam_{question["id"]}',
+                        key=f'exam_{exam_key}_{question["id"]}',
                         label_visibility="collapsed",
                     )
                 else:
                     exam_answers[question["id"]] = st.text_area(
                         "Answer",
-                        key=f'exam_{question["id"]}',
+                        key=f'exam_{exam_key}_{question["id"]}',
                         label_visibility="collapsed",
                     )
             exam_submitted = st.form_submit_button("Submit mock exam", type="primary")
         if exam_submitted:
             unanswered = [
                 question
-                for question in exam_questions
+                for question in exam_set_questions
                 if not exam_answers.get(question["id"]) or not str(exam_answers[question["id"]]).strip()
             ]
             if unanswered:
                 st.warning(f"Answer all questions before submitting the mock exam ({len(unanswered)} remaining).")
             else:
-                graded = grade_questions(exam_questions, exam_answers)
+                graded = grade_questions(exam_set_questions, exam_answers)
+                sitting = uuid4().hex
                 for result in graded["results"]:
-                    store.save_attempt(selected_id, "mock_exam", result)
+                    store.save_attempt(
+                        selected_id, "mock_exam", result, sitting=sitting, exam_set=exam_set, exam_variant=variant
+                    )
                 percentage = round(graded["score"] / graded["max_score"] * 100) if graded["max_score"] else 0
-                st.header(f'{percentage}% · {graded["score"]}/{graded["max_score"]}')
-                for question, result in zip(exam_questions, graded["results"]):
+                label = f"Variant {variant}" if exam_set == "variant" else EXAM_SET_LABELS[exam_set]
+                st.header(f'{label} · {percentage}% · {graded["score"]}/{graded["max_score"]}')
+                for question, result in zip(exam_set_questions, graded["results"]):
                     with st.expander(f'{question["prompt"]} · {result["score"]}/{result["max_score"]}'):
                         render_feedback(question, result)
 
@@ -828,6 +858,19 @@ elif page == "Progress":
             for topic_name, mastery in chart_data.items():
                 st.markdown(f"**{topic_name}** · {mastery}%")
                 st.progress(mastery / 100)
+        sittings = store.list_sittings(selected_id)
+        if sittings:
+            st.subheader("Mock exam sittings")
+            rows = []
+            for row in sittings[:12]:
+                ratio = round(row["score"] / row["max_score"] * 100) if row["max_score"] else 0
+                sat_at = datetime.fromisoformat(row["created_at"]).astimezone().strftime("%d %b, %H:%M")
+                rows.append(
+                    f'<div class="activity"><div class="what">{escape(sitting_label(row))}'
+                    f'<div class="meta">{escape(sat_at)} · {row["questions"]} questions · {row["score"]}/{row["max_score"]}</div></div>'
+                    f'<div class="score">{ratio}%</div></div>'
+                )
+            st.markdown("".join(rows), unsafe_allow_html=True)
         st.subheader("Recent activity")
         topic_titles = {topic["id"]: topic["title"] for topic in subject["topics"]}
         prompts = {question["id"]: question["prompt"] for question in subject["questions"]}

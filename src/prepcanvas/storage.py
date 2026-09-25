@@ -80,6 +80,9 @@ class StudyStore:
                 connection.execute(
                     "ALTER TABLE attempts ADD COLUMN is_answered INTEGER NOT NULL DEFAULT 1"
                 )
+            for column, definition in (("sitting", "TEXT"), ("exam_set", "TEXT"), ("exam_variant", "INTEGER")):
+                if column not in columns:
+                    connection.execute(f"ALTER TABLE attempts ADD COLUMN {column} {definition}")
             subject_columns = {
                 row[1]
                 for row in connection.execute("PRAGMA table_info(subjects)").fetchall()
@@ -210,14 +213,16 @@ class StudyStore:
             connection.execute("DELETE FROM coaching_profiles WHERE subject_id = ?", (subject_id,))
             connection.execute("DELETE FROM subjects WHERE id = ?", (subject_id,))
 
-    def save_attempt(self, subject_id: str, mode: str, result: dict, confidence=None):
+    def save_attempt(self, subject_id: str, mode: str, result: dict, confidence=None, sitting=None, exam_set=None, exam_variant=None):
+        """Save one answer; mock-exam answers share a `sitting` id so a whole exam can be listed later."""
         with self._connect() as connection:
             connection.execute(
                 """
                 INSERT INTO attempts (
                     subject_id, mode, topic_id, question_id,
-                    score, max_score, is_answered, confidence, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    score, max_score, is_answered, confidence, created_at,
+                    sitting, exam_set, exam_variant
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     subject_id,
@@ -229,8 +234,27 @@ class StudyStore:
                     int(result.get("is_answered", True)),
                     confidence,
                     self._now(),
+                    sitting,
+                    exam_set,
+                    exam_variant,
                 ),
             )
+
+    def list_sittings(self, subject_id: str) -> list:
+        """Mock-exam submissions, newest first: exam set, variant, date, and total score."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT sitting, exam_set, exam_variant, MIN(created_at) AS created_at,
+                       SUM(score) AS score, SUM(max_score) AS max_score, COUNT(*) AS questions
+                FROM attempts
+                WHERE subject_id = ? AND mode = 'mock_exam' AND sitting IS NOT NULL
+                GROUP BY sitting
+                ORDER BY created_at DESC
+                """,
+                (subject_id,),
+            ).fetchall()
+        return [dict(row) for row in rows]
 
     def list_attempts(self, subject_id: str) -> list:
         with self._connect() as connection:

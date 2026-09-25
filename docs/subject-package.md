@@ -31,6 +31,7 @@ Errors block loading; warnings are advice. The app runs the same validation ever
 | `exam_date` | no | `YYYY-MM-DD` or `null`. |
 | `materials` | no | Map of material kinds to `true`/`false` (`workbook`, `practice_tests`, `sample_answers`, `notes`, `transcripts`, `other`). |
 | `sources` | no | List of the files the content was built from, see below. |
+| `exam_blueprint` | no | Structure of the real exam, used to compose numbered mock-exam variants from the question pool, see below. |
 | `topics` | yes | Non-empty list of topics. |
 | `questions` | yes | Non-empty list of questions. |
 
@@ -41,6 +42,24 @@ Errors block loading; warnings are advice. The app runs the same validation ever
 ```
 
 `role` is one of `workbook`, `practice_exam`, `answer_key`, `notes`, `transcript`, `other`. `file` is optional and relative to the subject folder. List exactly the files the content was built from: a file that was excluded as not study material does not belong here, and the validator warns about a listed file that does not exist.
+
+### Exam blueprint
+
+```json
+{
+  "title": "Practice exam DLB-101",
+  "sections": [
+    { "type": "multiple_choice", "count": 14, "points": 3 },
+    { "type": "short_answer", "count": 2, "points": 8 },
+    { "type": "short_answer", "count": 2, "points": 10 },
+    { "type": "short_answer", "count": 2, "points": 6 }
+  ]
+}
+```
+
+Take the sections from the practice exam: group its questions by type and points, in exam order. A mock-exam variant is composed by filling each section with `count` questions of that `type` worth exactly `points`, spread across topics, from the whole question pool (source and generated questions alike). Variant numbers seed the draw, so variant 4 is always the same exam and variant 5 differs.
+
+For the pool to yield many distinct variants, write **at least three times `count` questions per section**, with exactly the section's `points`, spread over every topic. The validator rejects a blueprint whose sections cannot be filled once.
 
 ## Topics
 
@@ -139,6 +158,7 @@ Rules for rubrics:
 Errors (the package will not load):
 
 - wrong `schema_version`, missing required fields, ids that are not slugs, duplicate ids, unknown `topic_id`;
+- an `exam_blueprint` section the question pool cannot fill;
 - package `id` different from the subject folder name;
 - multiple-choice questions whose `correct_answer` is not one of the `options`;
 - short-answer questions without a `model_answer`, with unreachable full marks, or whose model answer fails its own rubric;

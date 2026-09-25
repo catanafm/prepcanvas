@@ -56,8 +56,9 @@ What to produce
 2. Write one topic object per topic with a summary, key concepts, a worked example, a common mistake, and a coach question, all grounded in the materials and labelled with a `source`.
 3. If a practice exam or exercises are attached, turn each question into a question object with `"origin": "source"`. Use the answer key or model answers for `correct_answer`, `model_answer`, and the rubric.
 4. For every topic, add new questions in the same style with `"origin": "generated"`, so that each topic has at least three questions and at least one multiple-choice question.
-5. Follow the schema below exactly. Every `model_answer` must earn full marks against its own rubric, so pick accepted phrases and keywords that actually appear in the model answer.
-6. Reply with only the JSON object, no commentary, so I can save it as `{display_path(subject_dir)}/{PACKAGE_FILE}`. Use `"id": "{subject_id}"`.
+5. If a practice exam is attached, describe its structure in `exam_blueprint` (sections by type and points, in exam order) and make the pool at least three times each section's count, with exactly the section's points, spread over every topic, so PrepCanvas can compose many different exam variants.
+6. Follow the schema below exactly. Every `model_answer` must earn full marks against its own rubric, so pick accepted phrases and keywords that actually appear in the model answer.
+7. Reply with only the JSON object, no commentary, so I can save it as `{display_path(subject_dir)}/{PACKAGE_FILE}`. Use `"id": "{subject_id}"`.
 
 Do not invent facts that the materials do not support. Write in the language of the materials unless I ask otherwise.
 
