@@ -23,6 +23,7 @@ from prepcanvas.exams import available_sets, describe, exam_questions, next_vari
 from prepcanvas.grading import grade_question, grade_questions
 from prepcanvas.library import exam_countdown, group_subjects, last_activity
 from prepcanvas.packages import MATERIAL_SUFFIXES, SubjectFiles, content_summary
+from prepcanvas.practice import next_question, question_status, random_question, remaining
 from prepcanvas.prompts import SKILL_NAME, agent_request, chat_prompt, display_path
 from prepcanvas.readiness import calculate_readiness, next_best_action
 from prepcanvas.storage import StudyStore
@@ -84,14 +85,21 @@ st.markdown(
     .activity .meta { color:var(--muted); font-size:.8rem; }
     .activity .score { font-weight:700; white-space:nowrap; }
     div.stButton > button, div.stFormSubmitButton > button { border-radius:999px; font-weight:700; }
+    .side-subject { margin:1.25rem 0 .5rem; padding-top:1rem; border-top:1px solid #4d6b5a; }
+    .side-subject b { font-size:1.05rem; }
+    .side-subject .meta { font-size:.8rem; opacity:.75; margin-top:.2rem; }
+    .side-stats { display:flex; gap:1.25rem; margin:.6rem 0; }
+    .side-stats b { display:block; font-size:1.3rem; }
+    .side-stats span { font-size:.72rem; opacity:.75; }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 
-@st.cache_resource
 def get_store(path: str) -> StudyStore:
+    # Created on every run on purpose: a cached instance would outlive code reloads and
+    # miss methods added in a newer version. Opening SQLite here costs milliseconds.
     return StudyStore(Path(path))
 
 
@@ -650,6 +658,16 @@ attempts = store.list_attempts(selected_id)
 readiness = calculate_readiness(subject, attempts)
 profile = store.get_profile(selected_id)
 
+st.sidebar.markdown(
+    f'<div class="side-subject"><div class="eyebrow">Subject</div><b>{escape(subject["name"])}</b>'
+    f'<div class="meta">{escape(exam_countdown(subject.get("exam_date"), date.today()))} · '
+    f'{escape(last_activity(attempts, datetime.now(timezone.utc)))}</div>'
+    f'<div class="side-stats"><div><b>{readiness["score"]}%</b><span>Readiness</span></div>'
+    f'<div><b>{readiness["coverage"]}%</b><span>Coverage</span></div>'
+    f'<div><b>{readiness["target"]}%</b><span>Target</span></div></div></div>',
+    unsafe_allow_html=True,
+)
+
 
 if page == "Overview":
     st.markdown(
@@ -796,15 +814,21 @@ elif page == "Practice":
             "Focus",
             topic_options,
             format_func=lambda value: "All topics" if value == "all" else get_topic(subject, value)["title"],
+            key="practice_focus",
+            on_change=lambda: st.session_state.pop("practice_question", None),
         )
         questions = subject["questions"] if chosen_topic == "all" else [q for q in subject["questions"] if q["topic_id"] == chosen_topic]
-        question_id = st.selectbox(
-            "Question",
-            [q["id"] for q in questions],
-            format_func=lambda value: next(q for q in questions if q["id"] == value)["prompt"],
+        known = {q["id"] for q in questions}
+        if st.session_state.get("practice_question") not in known:
+            st.session_state["practice_question"] = next_question(questions, attempts)["id"]
+        question = next(q for q in questions if q["id"] == st.session_state["practice_question"])
+        position = next(index for index, q in enumerate(questions, start=1) if q["id"] == question["id"])
+        st.markdown(
+            f'**Question {position} of {len(questions)}** · {escape(question_status(question, attempts))} · '
+            f'{remaining(questions, attempts)} still unanswered in this focus'
         )
-        question = next(q for q in questions if q["id"] == question_id)
-        with st.form(f'practice_{question_id}'):
+        st.markdown(f'<div class="panel">{escape(question["prompt"])}</div>', unsafe_allow_html=True)
+        with st.form(f'practice_{question["id"]}'):
             if question["type"] == "multiple_choice":
                 answer = st.radio("Your answer", question["options"], index=None)
             else:
@@ -817,6 +841,20 @@ elif page == "Practice":
                 result = grade_question(question, answer)
                 store.save_attempt(selected_id, "practice", result)
                 render_feedback(question, result)
+        next_column, random_column = st.columns([1, 1])
+        next_column.button(
+            "Next question",
+            key="next_question",
+            type="primary" if submitted else "secondary",
+            on_click=lambda: st.session_state.update(
+                practice_question=next_question(questions, store.list_attempts(selected_id), question["id"])["id"]
+            ),
+        )
+        random_column.button(
+            "Random question",
+            key="random_question",
+            on_click=lambda: st.session_state.update(practice_question=random_question(questions, question["id"])["id"]),
+        )
 
 elif page == "Mock exam":
     st.title("Mock exam")
