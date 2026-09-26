@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- The mock exam runs against the clock: questions appear after *Start exam*, the limit comes from the exam blueprint (`duration_minutes`) or about a minute per point and can be changed or switched off, a live countdown warns in the last five minutes, and after the limit unanswered questions can be handed in as blanks. Results and the Progress list show the time used and whether the limit was exceeded (TASK-039).
 - Practice shows one question at a time with *Next question* (never-answered first, then the ones answered longest ago) and *Random question*, plus the position in the focus, the last score, and how many questions are still unanswered (TASK-036).
 - The sidebar shows the open subject with its exam countdown, last activity, readiness, coverage, and target (TASK-037).
 - A subject can be exported from Settings as one archive with its materials, study content, coaching profile, and every saved answer, and imported from the library on another computer, optionally replacing a subject with the same id (TASK-035).

@@ -91,6 +91,40 @@ def describe(questions: list) -> str:
     return " · ".join(parts)
 
 
+MINUTES_PER_POINT = 1
+MIN_DURATION_MINUTES = 30
+
+
+def default_duration(package: dict, questions: list) -> int:
+    """Minutes for a sitting: the blueprint's stated duration, else about a minute per point."""
+    plan = blueprint(package) or {}
+    if plan.get("duration_minutes"):
+        return int(plan["duration_minutes"])
+    points = sum(question["points"] for question in questions)
+    return max(MIN_DURATION_MINUTES, points * MINUTES_PER_POINT)
+
+
+def format_duration(seconds: int) -> str:
+    """'1 h 05 min', '42 min', or '30 s'."""
+    seconds = max(0, int(seconds))
+    hours, rest = divmod(seconds, 3600)
+    minutes, secs = divmod(rest, 60)
+    if hours:
+        return f"{hours} h {minutes:02d} min"
+    if minutes:
+        return f"{minutes} min" if not secs or minutes >= 5 else f"{minutes} min {secs:02d} s"
+    return f"{secs} s"
+
+
+def time_status(limit_seconds, used_seconds) -> str:
+    """How a sitting used its time, for results and history."""
+    if not limit_seconds:
+        return f"{format_duration(used_seconds)}, no time limit"
+    if used_seconds <= limit_seconds:
+        return f"{format_duration(used_seconds)} of {format_duration(limit_seconds)}"
+    return f"{format_duration(used_seconds)}, over the {format_duration(limit_seconds)} limit by {format_duration(used_seconds - limit_seconds)}"
+
+
 def available_sets(package: dict) -> list:
     """Which exam sets this package supports, in display order."""
     sets = []

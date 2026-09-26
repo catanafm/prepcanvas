@@ -190,6 +190,8 @@ def _validate_blueprint(data: dict, issues: list):
         return
     if "title" in plan and not _text(plan["title"]):
         issues.append(_issue("error", "$.exam_blueprint.title", "'title' must be a non-empty string."))
+    if "duration_minutes" in plan and not _positive_int(plan["duration_minutes"]):
+        issues.append(_issue("error", "$.exam_blueprint.duration_minutes", "'duration_minutes' must be a positive integer."))
     questions = [q for q in data.get("questions") or [] if isinstance(q, dict)]
     for index, section in enumerate(plan["sections"]):
         path = f"$.exam_blueprint.sections[{index}]"

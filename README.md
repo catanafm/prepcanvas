@@ -38,7 +38,7 @@ PrepCanvas brings those decisions into one local workspace.
 - multi-subject local workspace for metadata and progress isolation
 - your own subjects: add materials, build the study content with your own AI assistant, review it, and study
 - one validated subject package format shared by the sample and your subjects, with a CLI validator
-- mock exam as the original practice exam, a numbered variant composed from the question pool by the exam's blueprint (variant 4 is always the same exam, variant 5 differs), or everything; sittings listed in Progress
+- mock exam as the original practice exam, a numbered variant composed from the question pool by the exam's blueprint (variant 4 is always the same exam, variant 5 differs), or everything, with a countdown like the real exam; sittings with their time listed in Progress
 - synthetic demo course with four topics and twelve questions
 - short diagnostic that selects a starting coaching strategy
 - guided topic explanations, examples, common traps, and recall checks

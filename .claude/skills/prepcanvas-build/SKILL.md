@@ -36,7 +36,7 @@ The subject id is `$ARGUMENTS` when given; otherwise take it from the request or
 
 ## 4. Mirror the exam: blueprint and pool
 
-If a practice exam is among the materials, describe its structure in `exam_blueprint`: one section per group of questions with the same type and points, in exam order (for example 14 multiple choice × 3 points, then 2 short answers × 8, 2 × 10, 2 × 6). PrepCanvas composes numbered mock-exam variants from the pool by this blueprint, so the pool decides how many different exams the learner can sit:
+If a practice exam is among the materials, describe its structure in `exam_blueprint`: one section per group of questions with the same type and points, in exam order (for example 14 multiple choice × 3 points, then 2 short answers × 8, 2 × 10, 2 × 6), and `duration_minutes` when the exam states its time limit. PrepCanvas composes numbered mock-exam variants from the pool by this blueprint, so the pool decides how many different exams the learner can sit:
 
 - for every section, the pool needs **at least three times `count`** questions of that type with **exactly** that number of points, the source questions included;
 - spread them over every topic so each variant covers the course, not one chapter;
