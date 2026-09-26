@@ -80,7 +80,13 @@ class StudyStore:
                 connection.execute(
                     "ALTER TABLE attempts ADD COLUMN is_answered INTEGER NOT NULL DEFAULT 1"
                 )
-            for column, definition in (("sitting", "TEXT"), ("exam_set", "TEXT"), ("exam_variant", "INTEGER")):
+            for column, definition in (
+                ("sitting", "TEXT"),
+                ("exam_set", "TEXT"),
+                ("exam_variant", "INTEGER"),
+                ("time_limit_seconds", "INTEGER"),
+                ("time_used_seconds", "INTEGER"),
+            ):
                 if column not in columns:
                     connection.execute(f"ALTER TABLE attempts ADD COLUMN {column} {definition}")
             subject_columns = {
@@ -213,7 +219,10 @@ class StudyStore:
             connection.execute("DELETE FROM coaching_profiles WHERE subject_id = ?", (subject_id,))
             connection.execute("DELETE FROM subjects WHERE id = ?", (subject_id,))
 
-    def save_attempt(self, subject_id: str, mode: str, result: dict, confidence=None, sitting=None, exam_set=None, exam_variant=None):
+    def save_attempt(
+        self, subject_id: str, mode: str, result: dict, confidence=None,
+        sitting=None, exam_set=None, exam_variant=None, time_limit_seconds=None, time_used_seconds=None,
+    ):
         """Save one answer; mock-exam answers share a `sitting` id so a whole exam can be listed later."""
         with self._connect() as connection:
             connection.execute(
@@ -221,8 +230,8 @@ class StudyStore:
                 INSERT INTO attempts (
                     subject_id, mode, topic_id, question_id,
                     score, max_score, is_answered, confidence, created_at,
-                    sitting, exam_set, exam_variant
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    sitting, exam_set, exam_variant, time_limit_seconds, time_used_seconds
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     subject_id,
@@ -237,6 +246,8 @@ class StudyStore:
                     sitting,
                     exam_set,
                     exam_variant,
+                    time_limit_seconds,
+                    time_used_seconds,
                 ),
             )
 
@@ -246,7 +257,8 @@ class StudyStore:
             rows = connection.execute(
                 """
                 SELECT sitting, exam_set, exam_variant, MIN(created_at) AS created_at,
-                       SUM(score) AS score, SUM(max_score) AS max_score, COUNT(*) AS questions
+                       SUM(score) AS score, SUM(max_score) AS max_score, COUNT(*) AS questions,
+                       MAX(time_limit_seconds) AS time_limit_seconds, MAX(time_used_seconds) AS time_used_seconds
                 FROM attempts
                 WHERE subject_id = ? AND mode = 'mock_exam' AND sitting IS NOT NULL
                 GROUP BY sitting
@@ -291,8 +303,9 @@ class StudyStore:
                 connection.execute(
                     """
                     INSERT INTO attempts (subject_id, mode, topic_id, question_id, score, max_score, is_answered,
-                                          confidence, created_at, sitting, exam_set, exam_variant)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                          confidence, created_at, sitting, exam_set, exam_variant,
+                                          time_limit_seconds, time_used_seconds)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         subject["id"],
@@ -307,6 +320,8 @@ class StudyStore:
                         row.get("sitting"),
                         row.get("exam_set"),
                         row.get("exam_variant"),
+                        row.get("time_limit_seconds"),
+                        row.get("time_used_seconds"),
                     ),
                 )
         profile = payload.get("profile")

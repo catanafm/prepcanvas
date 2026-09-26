@@ -48,6 +48,7 @@ Errors block loading; warnings are advice. The app runs the same validation ever
 ```json
 {
   "title": "Practice exam DLB-101",
+  "duration_minutes": 90,
   "sections": [
     { "type": "multiple_choice", "count": 14, "points": 3 },
     { "type": "short_answer", "count": 2, "points": 8 },
@@ -57,7 +58,7 @@ Errors block loading; warnings are advice. The app runs the same validation ever
 }
 ```
 
-Take the sections from the practice exam: group its questions by type and points, in exam order. A mock-exam variant is composed by filling each section with `count` questions of that `type` worth exactly `points`, spread across topics, from the whole question pool (source and generated questions alike). Variant numbers seed the draw, so variant 4 is always the same exam and variant 5 differs.
+Take the sections from the practice exam: group its questions by type and points, in exam order. `duration_minutes` is optional: set it when the exam states its time limit, and the mock exam runs with that clock by default. A mock-exam variant is composed by filling each section with `count` questions of that `type` worth exactly `points`, spread across topics, from the whole question pool (source and generated questions alike). Variant numbers seed the draw, so variant 4 is always the same exam and variant 5 differs.
 
 For the pool to yield many distinct variants, write **at least three times `count` questions per section**, with exactly the section's `points`, spread over every topic. The validator rejects a blueprint whose sections cannot be filled once.
 

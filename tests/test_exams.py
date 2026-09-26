@@ -1,6 +1,16 @@
 import copy
 
-from prepcanvas.exams import available_sets, compose_variant, describe, exam_questions, next_variant, shortfalls
+from prepcanvas.exams import (
+    available_sets,
+    compose_variant,
+    default_duration,
+    describe,
+    exam_questions,
+    format_duration,
+    next_variant,
+    shortfalls,
+    time_status,
+)
 from prepcanvas.packages import validate_package
 
 
@@ -59,6 +69,30 @@ def test_blueprint_is_validated_against_the_pool(demo_subject):
 
     subject["exam_blueprint"] = {"sections": []}
     assert validate_package(subject)[0]["path"] == "$.exam_blueprint"
+
+
+def test_duration_comes_from_the_blueprint_or_the_points(demo_subject):
+    questions = compose_variant(demo_subject, 1)
+    assert default_duration(demo_subject, questions) == 30, "8 points rounds up to the 30-minute floor"
+    demo_subject["exam_blueprint"]["duration_minutes"] = 45
+    assert default_duration(demo_subject, questions) == 45
+    demo_subject.pop("exam_blueprint")
+    assert default_duration(demo_subject, demo_subject["questions"] * 5) == 85, "17 points × 5 copies"
+
+
+def test_time_formatting_and_status():
+    assert format_duration(30) == "30 s"
+    assert format_duration(125) == "2 min 05 s"
+    assert format_duration(600) == "10 min"
+    assert format_duration(3900) == "1 h 05 min"
+    assert time_status(0, 700) == "11 min, no time limit"
+    assert time_status(5400, 2520) == "42 min of 1 h 30 min"
+    assert time_status(5400, 5700) == "1 h 35 min, over the 1 h 30 min limit by 5 min"
+
+
+def test_blueprint_duration_is_validated(demo_subject):
+    demo_subject["exam_blueprint"]["duration_minutes"] = "ninety"
+    assert [issue["path"] for issue in validate_package(demo_subject)] == ["$.exam_blueprint.duration_minutes"]
 
 
 def test_next_variant_skips_sat_ones():

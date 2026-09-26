@@ -98,6 +98,7 @@ def test_blank_mock_exam_is_not_saved_as_evidence(tmp_path, monkeypatch):
     database, app = start(tmp_path, monkeypatch)
     open_subject(app)
     open_page(app, "Mock exam")
+    button(app, "start_exam").click().run()
     next(item for item in app.button if item.label == "Submit mock exam").click().run()
 
     assert any("6 remaining" in warning.value for warning in app.warning)
@@ -213,16 +214,18 @@ def test_mock_exam_offers_the_original_exam_a_variant_or_everything(tmp_path, mo
     exam_set = next(radio for radio in app.radio if radio.key == "mock_exam_set")
     assert exam_set.options == ["Original practice exam", "Numbered variant from the question pool", "Every question"]
     assert exam_set.value == "source"
-    assert len(exam_widgets(app)) == 9
+    assert any("6 multiple choice · 3 short answer · 12 points" in item.value for item in app.caption)
     exam_set.set_value("variant").run()
-    assert len(exam_widgets(app)) == 6
     assert any("4 multiple choice · 2 short answer · 8 points" in item.value for item in app.caption)
     assert next(item for item in app.number_input if item.key == "mock_variant").value == 1
     next(radio for radio in app.radio if radio.key == "mock_exam_set").set_value("all").run()
+    assert any("8 multiple choice · 4 short answer · 17 points" in item.value for item in app.caption)
+    button(app, "start_exam").click().run()
     assert len(exam_widgets(app)) == 12
 
 
 def sit_variant(app):
+    button(app, "start_exam").click().run()
     for radio in app.radio:
         if radio.key.startswith("exam_"):
             radio.set_value(radio.options[0]).run()
@@ -307,6 +310,48 @@ def test_sidebar_shows_the_open_subject(tmp_path, monkeypatch):
     assert "Sustainable Business Fundamentals" in panel
     assert "No exam date" in panel and "Not started" in panel
     assert "Readiness" in panel and "Coverage" in panel
+
+
+def test_mock_exam_is_timed_and_records_the_time_used(tmp_path, monkeypatch):
+    database, app = start(tmp_path, monkeypatch)
+    open_subject(app)
+    open_page(app, "Mock exam")
+    assert exam_widgets(app) == [], "questions stay hidden until the exam starts"
+    limit = next(item for item in app.number_input if item.key.startswith("exam_limit_"))
+    assert limit.value == 30
+    limit.set_value(45).run()
+    button(app, "start_exam").click().run()
+    assert len(exam_widgets(app)) == 6
+    assert any("Time left" in item.value and "45 min" in item.value for item in app.info)
+
+    for radio in app.radio:
+        if radio.key.startswith("exam_"):
+            radio.set_value(radio.options[0]).run()
+    for area in app.text_area:
+        area.input("Something").run()
+    next(item for item in app.button if item.label == "Submit mock exam").click().run()
+    assert any(item.value.startswith("Time: ") and "of 45 min" in item.value for item in app.caption)
+    sitting = StudyStore(database).list_sittings(DEMO_ID)[0]
+    assert sitting["time_limit_seconds"] == 2700 and 0 <= sitting["time_used_seconds"] < 60
+
+    open_page(app, "Progress")
+    assert any("of 45 min" in item.value for item in app.markdown if 'class="activity"' in item.value)
+
+
+def test_expired_exam_accepts_blank_answers(tmp_path, monkeypatch):
+    database, app = start(tmp_path, monkeypatch)
+    open_subject(app)
+    open_page(app, "Mock exam")
+    next(item for item in app.number_input if item.key.startswith("exam_limit_")).set_value(1).run()
+    button(app, "start_exam").click().run()
+    app.session_state["exam_run"] = {**app.session_state["exam_run"], "started_at": "2026-01-01T00:00:00+00:00"}
+    app.run()
+    assert any("Time is up" in item.value for item in app.error)
+    next(item for item in app.button if item.label == "Submit mock exam").click().run()
+    assert len(app.exception) == 0
+    assert any("6 left blank" in item.value for item in app.caption)
+    sitting = StudyStore(database).list_sittings(DEMO_ID)[0]
+    assert sitting["score"] == 0 and sitting["questions"] == 6 and sitting["time_used_seconds"] > sitting["time_limit_seconds"]
 
 
 def test_sample_subject_content_page_is_read_only(tmp_path, monkeypatch):

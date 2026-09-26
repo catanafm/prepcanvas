@@ -19,7 +19,7 @@ if str(SRC_DIR) not in sys.path:
 from prepcanvas.catalog import diagnostic_questions as select_diagnostic_questions
 from prepcanvas.catalog import get_topic, load_demo_subject
 from prepcanvas.coaching import recommend_strategy
-from prepcanvas.exams import available_sets, describe, exam_questions, next_variant
+from prepcanvas.exams import available_sets, default_duration, describe, exam_questions, format_duration, next_variant, time_status
 from prepcanvas.grading import grade_question, grade_questions
 from prepcanvas.library import exam_countdown, group_subjects, last_activity
 from prepcanvas.packages import MATERIAL_SUFFIXES, SubjectFiles, content_summary
@@ -619,6 +619,38 @@ def select_exam(subject: dict, sittings: list) -> tuple:
     return exam_set, variant, questions
 
 
+def start_exam(exam_key: str, limit_minutes: int):
+    st.session_state["exam_run"] = {
+        "key": exam_key,
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "limit_seconds": int(limit_minutes) * 60,
+    }
+
+
+def stop_exam():
+    st.session_state.pop("exam_run", None)
+
+
+def exam_seconds_used(run: dict) -> int:
+    return int((datetime.now(timezone.utc) - datetime.fromisoformat(run["started_at"])).total_seconds())
+
+
+@st.fragment(run_every="1s")
+def render_exam_clock(run: dict):
+    """Live countdown; only this fragment reruns every second, the answers stay put."""
+    used = exam_seconds_used(run)
+    limit = run["limit_seconds"]
+    if not limit:
+        st.info(f"No time limit · {format_duration(used)} elapsed")
+    elif used < limit:
+        left = limit - used
+        # Whole minutes are rounded up so the clock does not read "29 min" a second after a 30-minute start.
+        shown = left if left <= 300 else ((left + 59) // 60) * 60
+        (st.warning if left <= 300 else st.info)(f"Time left · {format_duration(shown)} of {format_duration(limit)}")
+    else:
+        st.error(f"Time is up · over by {format_duration(used - limit)}. Submit now; unanswered questions score zero.")
+
+
 def sitting_label(row: dict) -> str:
     if row["exam_set"] == "variant":
         return f'Variant {row["exam_variant"]}'
@@ -865,6 +897,23 @@ elif page == "Mock exam":
         sittings = store.list_sittings(selected_id)
         exam_set, variant, exam_set_questions = select_exam(subject, sittings)
         exam_key = f"{exam_set}_{variant or 0}"
+        run = st.session_state.get("exam_run")
+        if run and run["key"] != exam_key:
+            stop_exam()
+            run = None
+        if run is None:
+            suggested = default_duration(subject, exam_set_questions)
+            limit_column, start_column = st.columns([1, 2], vertical_alignment="bottom")
+            limit_minutes = limit_column.number_input(
+                "Time limit, minutes (0 = none)", 0, 600, suggested, key=f"exam_limit_{exam_key}"
+            )
+            start_column.button(
+                "Start exam", key="start_exam", type="primary", on_click=start_exam, args=(exam_key, limit_minutes)
+            )
+            st.caption("The questions appear once you start. Feedback stays hidden until you submit.")
+            st.stop()
+        clock = st.empty()  # filled after the form, so a submitted exam stops the countdown
+        time_is_up = bool(run["limit_seconds"]) and exam_seconds_used(run) >= run["limit_seconds"]
         with st.form(f"mock_exam_{exam_key}"):
             exam_answers = {}
             for index, question in enumerate(exam_set_questions, start=1):
@@ -884,24 +933,32 @@ elif page == "Mock exam":
                         label_visibility="collapsed",
                     )
             exam_submitted = st.form_submit_button("Submit mock exam", type="primary")
+        unanswered = [
+            question
+            for question in exam_set_questions
+            if not exam_answers.get(question["id"]) or not str(exam_answers[question["id"]]).strip()
+        ]
+        handed_in = exam_submitted and (not unanswered or time_is_up)
+        if not handed_in:
+            with clock.container():
+                render_exam_clock(run)
         if exam_submitted:
-            unanswered = [
-                question
-                for question in exam_set_questions
-                if not exam_answers.get(question["id"]) or not str(exam_answers[question["id"]]).strip()
-            ]
-            if unanswered:
+            if unanswered and not time_is_up:
                 st.warning(f"Answer all questions before submitting the mock exam ({len(unanswered)} remaining).")
             else:
-                graded = grade_questions(exam_set_questions, exam_answers)
+                used = exam_seconds_used(run)
+                graded = grade_questions(exam_set_questions, {k: v or "" for k, v in exam_answers.items()})
                 sitting = uuid4().hex
                 for result in graded["results"]:
                     store.save_attempt(
-                        selected_id, "mock_exam", result, sitting=sitting, exam_set=exam_set, exam_variant=variant
+                        selected_id, "mock_exam", result, sitting=sitting, exam_set=exam_set, exam_variant=variant,
+                        time_limit_seconds=run["limit_seconds"], time_used_seconds=used,
                     )
+                stop_exam()
                 percentage = round(graded["score"] / graded["max_score"] * 100) if graded["max_score"] else 0
                 label = f"Variant {variant}" if exam_set == "variant" else EXAM_SET_LABELS[exam_set]
                 st.header(f'{label} · {percentage}% · {graded["score"]}/{graded["max_score"]}')
+                st.caption(f"Time: {time_status(run['limit_seconds'], used)}" + (f" · {len(unanswered)} left blank" if unanswered else ""))
                 for question, result in zip(exam_set_questions, graded["results"]):
                     with st.expander(f'{question["prompt"]} · {result["score"]}/{result["max_score"]}'):
                         render_feedback(question, result)
@@ -936,7 +993,9 @@ elif page == "Progress":
                 sat_at = datetime.fromisoformat(row["created_at"]).astimezone().strftime("%d %b, %H:%M")
                 rows.append(
                     f'<div class="activity"><div class="what">{escape(sitting_label(row))}'
-                    f'<div class="meta">{escape(sat_at)} · {row["questions"]} questions · {row["score"]}/{row["max_score"]}</div></div>'
+                    f'<div class="meta">{escape(sat_at)} · {row["questions"]} questions · {row["score"]}/{row["max_score"]}'
+                    + (f' · {escape(time_status(row["time_limit_seconds"], row["time_used_seconds"]))}' if row["time_used_seconds"] is not None else "")
+                    + "</div></div>"
                     f'<div class="score">{ratio}%</div></div>'
                 )
             st.markdown("".join(rows), unsafe_allow_html=True)
