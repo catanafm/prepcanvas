@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- Practice shows one question at a time with *Next question* (never-answered first, then the ones answered longest ago) and *Random question*, plus the position in the focus, the last score, and how many questions are still unanswered (TASK-036).
+- The sidebar shows the open subject with its exam countdown, last activity, readiness, coverage, and target (TASK-037).
 - A subject can be exported from Settings as one archive with its materials, study content, coaching profile, and every saved answer, and imported from the library on another computer, optionally replacing a subject with the same id (TASK-035).
 - Numbered mock-exam variants: a package may carry an `exam_blueprint` taken from the practice exam, and the Mock exam page composes variant N from the question pool by that blueprint, spread across topics, so a variant can be retaken until mastered while the next one differs. *Next new variant* and *Random variant* buttons, a structure line with the total points, and a list of sittings with scores on the Progress page. The build skill and chat prompt ask for the blueprint and a pool of at least three questions per slot (TASK-032).
 - The build skill and the chat prompt triage the materials first: every file gets a role, files that are not study material for the subject are excluded and named in the report, and the agent asks instead of building when no course book or practice exam is present. The validator warns about a listed source file that does not exist (TASK-033).
@@ -15,6 +17,10 @@ All notable changes to this project are documented here. The format follows [Kee
 - Questions taken from a practice exam are labelled `origin: source` and generated ones `origin: generated`; the mock exam can be limited to either set (TASK-026, TASK-029).
 - The demo is a *Sample* subject that can be removed with its progress, stays removed across restarts, and can be added back from the library; an empty library offers *Create your first subject* and *Explore the sample subject* (TASK-024).
 - A subject library home screen: welcome, *In progress* and *Completed* groups, a *+ New subject* card, and per-subject cards with exam countdown, last activity, readiness, and coverage. Subjects can be marked as completed and reopened (TASK-023).
+
+### Fixed
+
+- The study store is no longer cached across runs, so pulling a new version no longer crashes the Mock exam page with a stale `StudyStore` until the app is restarted (TASK-038).
 
 ### Changed
 

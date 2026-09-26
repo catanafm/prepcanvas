@@ -32,6 +32,9 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-033](TASK-033-material-triage.md) | Triage materials before building so only study material becomes content | feature | high | done |
 | [TASK-032](TASK-032-exam-variants.md) | Compose numbered mock-exam variants from a question pool and an exam blueprint | feature | high | done |
 | [TASK-035](TASK-035-subject-export-import.md) | Export a subject with its progress and import it on another computer | feature | medium | done |
+| [TASK-038](TASK-038-store-cache-stale-class.md) | Stop caching the StudyStore across code reloads | fix | high | done |
+| [TASK-036](TASK-036-practice-flow.md) | Move through practice questions with Next and Random instead of a dropdown | feature | high | done |
+| [TASK-037](TASK-037-sidebar-subject-summary.md) | Show the open subject and its key numbers in the sidebar | feature | medium | done |
 | [TASK-013](TASK-013-source-preview-classification.md) | Cache extracted text so every agent can read PDF and DOCX materials | feature | medium | backlog |
 | [TASK-014](TASK-014-topic-map-citations.md) | Show structured citations for topics and questions | feature | medium | backlog |
 | [TASK-030](TASK-030-run-agent-from-app.md) | Run an installed CLI agent from the Content page | feature | medium | backlog |
@@ -48,6 +51,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 - **v0.1.1 — Presentation polish:** TASK-020 → TASK-022 · released 2026-09-24
 - **v0.2.0 — Real subjects:** TASK-023 → TASK-029 (library, sample subject, packages, materials, build skill, Content page, exam sets)
 - **v0.2.1 — Exam variants:** TASK-034, TASK-033, TASK-032, TASK-035
+- **v0.2.2 — Practice flow:** TASK-038, TASK-036, TASK-037
 - **v0.3.0 — Smoother building:** TASK-013, TASK-014, TASK-030, TASK-031
 - **v0.4.0 — Study smarter:** TASK-015, TASK-018, TASK-019
 - **Later:** TASK-016

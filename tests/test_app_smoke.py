@@ -269,6 +269,46 @@ def test_export_is_offered_for_user_subjects_only(tmp_path, monkeypatch):
     assert not any(item.key == "prepare_export" for item in app.button)
 
 
+def practice_prompt(app):
+    return next(item.value for item in app.markdown if 'class="panel"' in item.value and "Question" not in item.value)
+
+
+def test_practice_moves_with_next_and_random_instead_of_a_dropdown(tmp_path, monkeypatch):
+    database, app = start(tmp_path, monkeypatch)
+    open_subject(app)
+    open_page(app, "Practice")
+    assert [item.key for item in app.selectbox] == ["practice_focus"]
+    assert any("Question 1 of 12" in item.value and "Not answered yet" in item.value for item in app.markdown)
+    first = practice_prompt(app)
+
+    button(app, "next_question").click().run()
+    assert practice_prompt(app) != first
+    assert any("Question 2 of 12" in item.value for item in app.markdown)
+
+    app.radio[-1].set_value(app.radio[-1].options[0]).run()
+    next(item for item in app.button if item.label == "Check answer").click().run()
+    assert len(StudyStore(database).list_attempts(DEMO_ID)) == 1
+    button(app, "next_question").click().run()
+    assert any("Question 1 of 12" in item.value and "11 still unanswered" in item.value for item in app.markdown)  # unanswered first
+
+    current = practice_prompt(app)
+    button(app, "random_question").click().run()
+    assert practice_prompt(app) != current
+
+    next(item for item in app.selectbox if item.key == "practice_focus").set_value("carbon-basics").run()
+    assert any("Question 1 of 3" in item.value for item in app.markdown)
+
+
+def test_sidebar_shows_the_open_subject(tmp_path, monkeypatch):
+    _, app = start(tmp_path, monkeypatch)
+    assert not any("side-subject" in item.value for item in app.sidebar.markdown)
+    open_subject(app)
+    panel = next(item.value for item in app.sidebar.markdown if "side-subject" in item.value)
+    assert "Sustainable Business Fundamentals" in panel
+    assert "No exam date" in panel and "Not started" in panel
+    assert "Readiness" in panel and "Coverage" in panel
+
+
 def test_sample_subject_content_page_is_read_only(tmp_path, monkeypatch):
     _, app = start(tmp_path, monkeypatch)
     open_subject(app)
