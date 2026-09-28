@@ -53,3 +53,17 @@ def test_group_subjects_by_status_with_soonest_exam_first():
     groups = group_subjects(subjects)
     assert [s["name"] for s in groups["active"]] == ["Sooner", "Later", "Legacy row without status", "No date"]
     assert [s["name"] for s in groups["completed"]] == ["Done"]
+
+
+def test_recently_studied_subjects_come_before_never_studied_ones():
+    subjects = [
+        {"id": "a", "name": "Algebra", "exam_date": "2026-10-01", "status": "active"},
+        {"id": "b", "name": "Biology", "exam_date": "2026-12-01", "status": "active"},
+        {"id": "c", "name": "Chemistry", "exam_date": None, "status": "active"},
+        {"id": "d", "name": "Drama", "exam_date": "2026-11-01", "status": "completed"},
+    ]
+    last_studied = {"b": "2026-09-27T10:00:00+00:00", "c": "2026-09-28T08:00:00+00:00", "a": None}
+    groups = group_subjects(subjects, last_studied)
+    assert [s["id"] for s in groups["active"]] == ["c", "b", "a"], "newest activity first, then soonest exam"
+    assert [s["id"] for s in groups["completed"]] == ["d"]
+    assert [s["id"] for s in group_subjects(subjects)["active"]] == ["a", "b", "c"], "without activity: soonest exam first"

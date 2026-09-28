@@ -53,8 +53,24 @@ def test_app_opens_on_the_subject_library(tmp_path, monkeypatch):
     assert len(app.exception) == 0
     assert any("Welcome to PrepCanvas" in item.value for item in app.markdown)
     assert [item.value for item in app.subheader] == ["In progress"]
-    assert button(app, "new_subject")
+    assert button(app, "new_subject").label == "New subject"
     assert button(app, f"open_{DEMO_ID}").label == "Open"
+    titles = [item.value for item in app.markdown if 'class="card-title"' in item.value]
+    assert "New subject" not in titles[0], "the first card is a subject, not the creation card"
+
+
+def test_last_studied_subject_is_listed_first(tmp_path, monkeypatch):
+    database, app = start(tmp_path, monkeypatch)
+    create_subject(app, "Algebra")
+    button(app, "back_to_library").click().run()
+    create_subject(app, "Zoology")
+    button(app, "back_to_library").click().run()
+    order = lambda: [item.value.split('class="card-title">')[1].split("<")[0] for item in app.markdown if 'class="card-title"' in item.value]
+    assert order() == ["Algebra", "Sustainable Business Fundamentals", "Zoology"], "no activity: soonest exam, then name"
+    store, subject = seeded_store(database)
+    store.save_attempt("zoology", "practice", {"topic_id": "t", "question_id": "q", "score": 1, "max_score": 1})
+    app.run()
+    assert order()[0] == "Zoology"
 
 
 def test_every_primary_screen_renders_without_exceptions(tmp_path, monkeypatch):

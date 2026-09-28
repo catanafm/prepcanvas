@@ -49,9 +49,13 @@ st.markdown(
     .welcome { margin:0 0 1.25rem; }
     .welcome h1 { margin:0 0 .25rem; }
     .welcome p { color:var(--muted); margin:0; }
-    .card-title { font-weight:700; font-size:1.1rem; margin:0 0 .15rem; }
-    .card-meta { color:var(--muted); font-size:.85rem; margin:.1rem 0; }
-    .card-stats { display:flex; gap:1.25rem; margin:.6rem 0 .2rem; }
+    /* Library cards share one height: two title lines, one meta line, one stats block, then the button. */
+    .card-title { font-weight:700; font-size:1.1rem; line-height:1.3; margin:0 0 .15rem; height:2.6em; overflow:hidden; }
+    .card-title .badge { line-height:1; }
+    .card-meta { color:var(--muted); font-size:.85rem; margin:.1rem 0; height:1.4em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .card-hint { color:var(--muted); font-size:.85rem; line-height:1.4; height:4.4em; margin:.6rem 0 .2rem; overflow:hidden; }
+    .card-stats { display:flex; gap:1.25rem; height:3.75em; margin:.6rem 0 .2rem; overflow:hidden; }
+    .welcome-row { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; }
     .card-stats b { display:block; font-size:1.35rem; }
     .card-stats span { color:var(--muted); font-size:.75rem; }
     .badge { display:inline-block; background:var(--warm); color:#8a5a1c; border-radius:999px; padding:.1rem .5rem; font-size:.7rem; font-weight:700; margin-left:.4rem; vertical-align:middle; }
@@ -226,7 +230,7 @@ def render_subject_card(item: dict):
         f'<div class="card-stats"><div><b>{item_readiness["score"]}%</b><span>Readiness</span></div>'
         f'<div><b>{item_readiness["coverage"]}%</b><span>Topic coverage</span></div></div>'
         if has_content
-        else f'<div class="card-meta">{escape(content_hint(item, content))}</div>'
+        else f'<div class="card-hint">{escape(content_hint(item, content))}</div>'
     )
     with st.container(border=True):
         st.markdown(
@@ -283,24 +287,24 @@ def render_library(records: list):
     if not records:
         render_empty_library()
         return
-    groups = group_subjects(records)
+    last_studied = {}
+    for item in records:
+        item_attempts = store.list_attempts(item["id"])
+        last_studied[item["id"]] = item_attempts[0]["created_at"] if item_attempts else None
+    groups = group_subjects(records, last_studied)
     summary = f'{len(groups["active"])} in progress · {len(groups["completed"])} completed'
-    st.markdown(
+    welcome_column, action_column = st.columns([4, 1], vertical_alignment="center")
+    welcome_column.markdown(
         '<div class="welcome"><h1>Welcome to PrepCanvas</h1>'
-        f"<p>Pick up where you left off, or add a subject for your next exam. {summary}.</p></div>",
+        f"<p>Pick up where you left off. {summary}.</p></div>",
         unsafe_allow_html=True,
     )
+    action_column.button("New subject", key="new_subject", type="primary", on_click=open_library, args=("new",), width="stretch")
     st.subheader("In progress")
+    if not groups["active"]:
+        st.caption("Nothing in progress. Reopen a completed subject from its Settings, or create a new one.")
     columns = st.columns(3)
-    with columns[0]:
-        with st.container(border=True):
-            st.markdown(
-                '<div class="card-title">+ New subject</div>'
-                '<div class="card-meta">Set an exam date and target, then build study content from your own materials.</div>',
-                unsafe_allow_html=True,
-            )
-            st.button("New subject", key="new_subject", on_click=open_library, args=("new",))
-    for index, item in enumerate(groups["active"], start=1):
+    for index, item in enumerate(groups["active"]):
         with columns[index % 3]:
             render_subject_card(item)
     if groups["completed"]:

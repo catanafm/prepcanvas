@@ -4,6 +4,11 @@ from datetime import date, datetime
 from typing import Optional
 
 
+def _descending(timestamp: str) -> str:
+    """Invert an ISO timestamp so an ascending sort puts the newest first."""
+    return "".join(chr(0x10FFFF - ord(char)) for char in timestamp)
+
+
 def exam_countdown(exam_date: Optional[str], today: date) -> str:
     if not exam_date:
         return "No exam date"
@@ -32,11 +37,20 @@ def last_activity(attempts: list, now: datetime) -> str:
     return f"Studied {days} days ago"
 
 
-def group_subjects(subjects: list) -> dict:
-    """Split subjects into in-progress and completed, soonest exam first."""
+def group_subjects(subjects: list, last_studied: dict = None) -> dict:
+    """Split subjects into in-progress and completed.
+
+    Recently studied subjects come first (newest activity on top); never-studied
+    ones follow, soonest exam first. `last_studied` maps subject id to the ISO
+    timestamp of the newest attempt, or None.
+    """
+    last_studied = last_studied or {}
 
     def sort_key(subject):
-        return (subject.get("exam_date") or "9999-12-31", subject["name"].casefold())
+        studied = last_studied.get(subject.get("id"))
+        if studied:
+            return (0, "", "", _descending(studied))
+        return (1, subject.get("exam_date") or "9999-12-31", subject["name"].casefold(), "")
 
     return {
         "active": sorted((s for s in subjects if s.get("status", "active") != "completed"), key=sort_key),
