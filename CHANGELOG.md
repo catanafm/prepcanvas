@@ -21,6 +21,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- Malformed package fields now return structured validation errors; the library, Content page, and CLI remain usable while invalid files are kept for correction (TASK-044).
+
 - Subject archives now reject unsafe ids, paths, links, duplicate filenames, malformed manifests, and oversized contents before import; subject storage rejects symlink escapes (TASK-042).
 
 - The study store is no longer cached across runs, so pulling a new version no longer crashes the Mock exam page with a stale `StudyStore` until the app is restarted (TASK-038).

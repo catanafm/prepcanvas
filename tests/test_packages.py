@@ -216,3 +216,37 @@ def test_subject_storage_rejects_symlink_escapes(tmp_path, level):
     with pytest.raises(ValueError, match="links"):
         files.save_material("safe", "notes.md", b"synthetic")
     assert list(outside.iterdir()) == []
+
+
+@pytest.mark.parametrize("value", [None, True, 1, 1.5, "wrong", {}, [], [None], [{"topic_id": []}]])
+@pytest.mark.parametrize("field", ["topics", "questions", "sources", "exam_blueprint"])
+def test_malformed_containers_return_issues(demo_subject, field, value):
+    demo_subject[field] = value
+    issues = validate_package(demo_subject)
+    assert isinstance(issues, list)
+    assert all(set(issue) == {"level", "path", "message"} for issue in issues)
+
+
+@pytest.mark.parametrize("value", [None, True, 1, "bad", [], {}])
+def test_each_nested_field_handles_json_types(demo_subject, value):
+    # Mutate each field separately: validation must never throw regardless of type.
+    objects = [("topics", 0), ("questions", 0), ("questions", 2), ("sources", 0)]
+    for collection, index in objects:
+        for field in demo_subject[collection][index]:
+            candidate = copy.deepcopy(demo_subject)
+            candidate[collection][index][field] = value
+            assert isinstance(validate_package(candidate), list), (collection, field, value)
+    rubric_question = short_answer(demo_subject)
+    for field in {"label", "points", "accepted_phrases", "keywords", "required_keywords", "minimum_keyword_matches"}:
+        candidate = copy.deepcopy(demo_subject)
+        short_answer(candidate)["rubric_points"][0][field] = value
+        assert isinstance(validate_package(candidate), list), (field, value)
+
+
+@pytest.mark.parametrize("content", [b"\xff", b"{", b'[]', b'{"topics": 1, "questions": 1}'])
+def test_invalid_package_bytes_are_recoverable_and_preserved(tmp_path, content):
+    path = tmp_path / "package.json"
+    path.write_bytes(content)
+    with pytest.raises(PackageError):
+        read_package(path)
+    assert path.read_bytes() == content
