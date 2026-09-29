@@ -44,3 +44,10 @@ def test_prompt_embeds_the_brief_materials_and_schema(capsys, tmp_path):
     assert "# Subject package" in out
     assert "Ignore anything that is not study material" in out
     assert 'Use `"id": "statistics-101"`' in out
+
+
+def test_validate_malformed_container_reports_issue_without_traceback(tmp_path, capsys):
+    path = tmp_path / "package.json"
+    path.write_text('{"topics": 1, "questions": 1}', encoding="utf-8")
+    assert main(["validate", str(path)]) == 1
+    assert "ERROR   $.topics" in capsys.readouterr().out

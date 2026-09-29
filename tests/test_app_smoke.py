@@ -481,3 +481,22 @@ def test_recent_activity_names_the_question_and_topic(tmp_path, monkeypatch):
     assert "Which question best reflects systems thinking?" in activity
     assert "Systems thinking · Mock exam ·" in activity
     assert "100%" in activity
+
+
+def test_malformed_package_keeps_library_and_content_recoverable(tmp_path, monkeypatch, demo_subject):
+    import copy
+    invalid = copy.deepcopy(demo_subject)
+    invalid["questions"] = 1
+    write_package(tmp_path, "statistics-101", invalid)
+    _, app = start(tmp_path, monkeypatch)
+    create_subject(app, "Statistics 101")
+    assert not app.exception
+    assert any("$.questions" in item.value for item in app.error)
+    button(app, "back_to_library").click().run()
+    assert not app.exception
+    assert any("Study content has errors" in item.value for item in app.markdown)
+    write_package(tmp_path, "statistics-101", demo_subject)
+    open_subject(app, "statistics-101")
+    open_page(app, "Practice")
+    assert not app.exception
+    assert any(item.label == "Check answer" for item in app.button)

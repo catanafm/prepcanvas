@@ -49,6 +49,10 @@ def _text_list(value) -> bool:
     return isinstance(value, list) and all(isinstance(item, str) for item in value)
 
 
+def _list(value) -> list:
+    return value if isinstance(value, list) else []
+
+
 def _positive_int(value) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
@@ -74,7 +78,7 @@ def _validate_topic(topic, path: str, issues: list) -> Optional[str]:
         topic,
         path,
         {
-            "id": (lambda v: _text(v) and bool(SLUG.match(v)), "a lowercase slug such as 'systems-thinking'"),
+            "id": (lambda v: _text(v) and bool(SLUG.fullmatch(v)), "a lowercase slug such as 'systems-thinking'"),
             "title": (_text, "a non-empty string"),
             "summary": (_text, "a non-empty string"),
             "key_concepts": (lambda v: _text_list(v) and len(v) > 0, "a non-empty list of strings"),
@@ -115,7 +119,7 @@ def _validate_rubric(question: dict, path: str, issues: list) -> bool:
             issues.append(_issue("error", point_path, "A rubric point needs 'accepted_phrases' or 'keywords' so it can be matched."))
             ok = False
         minimum = point.get("minimum_keyword_matches")
-        if minimum is not None and not _positive_int(minimum):
+        if "minimum_keyword_matches" in point and not _positive_int(minimum):
             issues.append(_issue("error", f"{point_path}.minimum_keyword_matches", "'minimum_keyword_matches' must be a positive integer."))
             ok = False
         if _positive_int(point.get("points")):
@@ -137,7 +141,7 @@ def _validate_question(question, path: str, topic_ids: set, issues: list) -> Opt
         question,
         path,
         {
-            "id": (lambda v: _text(v) and bool(SLUG.match(v)), "a lowercase slug such as 'sys-1'"),
+            "id": (lambda v: _text(v) and bool(SLUG.fullmatch(v)), "a lowercase slug such as 'sys-1'"),
             "topic_id": (_text, "a topic id"),
             "type": (lambda v: v in QUESTION_TYPES, "one of " + ", ".join(QUESTION_TYPES)),
             "points": (_positive_int, "a positive integer"),
@@ -192,7 +196,7 @@ def _validate_blueprint(data: dict, issues: list):
         issues.append(_issue("error", "$.exam_blueprint.title", "'title' must be a non-empty string."))
     if "duration_minutes" in plan and not _positive_int(plan["duration_minutes"]):
         issues.append(_issue("error", "$.exam_blueprint.duration_minutes", "'duration_minutes' must be a positive integer."))
-    questions = [q for q in data.get("questions") or [] if isinstance(q, dict)]
+    questions = [q for q in _list(data.get("questions")) if isinstance(q, dict)]
     for index, section in enumerate(plan["sections"]):
         path = f"$.exam_blueprint.sections[{index}]"
         if not isinstance(section, dict):
@@ -236,7 +240,7 @@ def validate_package(data, expected_id: Optional[str] = None, base_dir: Optional
         data,
         "$",
         {
-            "id": (lambda v: _text(v) and bool(SLUG.match(v)), "a lowercase slug"),
+            "id": (lambda v: _text(v) and bool(SLUG.fullmatch(v)), "a lowercase slug"),
             "name": (_text, "a non-empty string"),
             "topics": (lambda v: isinstance(v, list) and len(v) > 0, "a non-empty list"),
             "questions": (lambda v: isinstance(v, list) and len(v) > 0, "a non-empty list"),
@@ -273,13 +277,15 @@ def validate_package(data, expected_id: Optional[str] = None, base_dir: Optional
             file = source.get("file")
             if file is not None and not _text(file):
                 issues.append(_issue("error", f"{source_path}.file", "'file' must be a non-empty relative path."))
+            elif file and "\0" in file:
+                issues.append(_issue("error", f"{source_path}.file", "Source paths cannot contain null characters."))
             elif file and base_dir is not None and not (Path(base_dir) / file).is_file():
                 issues.append(_issue("warning", f"{source_path}.file", f"Source file '{file}' was not found next to the package; list only the files the content was built from."))
 
     _validate_blueprint(data, issues)
 
     topic_ids = []
-    for index, topic in enumerate(data.get("topics") or []):
+    for index, topic in enumerate(_list(data.get("topics"))):
         topic_id = _validate_topic(topic, f"$.topics[{index}]", issues)
         if topic_id in topic_ids:
             issues.append(_issue("error", f"$.topics[{index}].id", f"Duplicate topic id '{topic_id}'."))
@@ -288,7 +294,7 @@ def validate_package(data, expected_id: Optional[str] = None, base_dir: Optional
 
     question_ids = set()
     per_topic = {topic_id: {"total": 0, "multiple_choice": 0} for topic_id in topic_ids}
-    for index, question in enumerate(data.get("questions") or []):
+    for index, question in enumerate(_list(data.get("questions"))):
         _validate_question(question, f"$.questions[{index}]", set(topic_ids), issues)
         if not isinstance(question, dict):
             continue
@@ -298,7 +304,7 @@ def validate_package(data, expected_id: Optional[str] = None, base_dir: Optional
             question_ids.add(question["id"])
         # Coverage counts every question that names a topic, so one broken
         # question does not also report its topic as empty.
-        if question.get("topic_id") in per_topic:
+        if _text(question.get("topic_id")) and question["topic_id"] in per_topic:
             counts = per_topic[question["topic_id"]]
             counts["total"] += 1
             counts["multiple_choice"] += question.get("type") == "multiple_choice"
