@@ -1,57 +1,46 @@
 # Roadmap
 
-## Stage 1 — Public foundation
+The [task board](../tasks/README.md) is the source of truth for status and order. The [2026-09-29 review](reviews/2026-09-29.md) explains the current priorities.
 
-Goal: a safe, reproducible repository that demonstrates the product loop.
+## Delivered foundation
 
-- synthetic demo subject
-- multi-subject local storage
-- diagnostic coaching profile
-- topic learning and retrieval practice
-- delayed-feedback mock exam
-- transparent readiness heuristic
-- tests, documentation, privacy boundaries
-- screenshots and GitHub release
+The tagged v0.1.1 release demonstrates the synthetic study loop. Current main additionally implements real subjects, local materials, validated packages, assistant build handoff, question origins, exam variants, archive transfer, practice navigation, and timed sittings. These additions are still under Unreleased; milestone labels are not release tags.
 
-## Stage 2 — Real subjects with your own assistant
+## Next — Reliability before release
 
-Goal: make the product useful for a real private subject without API keys or a hosted service.
+Goal: preserve learner data and make imported content safe to use.
 
-- subject library and removable sample subject
-- one validated subject package format shared by the sample and user subjects
-- materials stored privately per subject, added from the Content page
-- an Agent Skill that lets any CLI coding agent build the package from the materials
-- a copy-and-paste prompt and JSON import for chat assistants
-- validation with a rubric self-check, shown in the app with clear errors
-- questions labelled by origin so the mock exam can replay the practice exam or a generated variant
+- TASK-042: constrain archive ids and paths, validate manifests, and bound extraction
+- TASK-043: stage imports and replacements so failure preserves the previous subject and package
+- TASK-044: return recoverable validation issues for malformed generated JSON
+- TASK-045: preserve Unicode answers and define supported grading languages
+- TASK-046: isolate timers and answer state by subject and sitting
+- TASK-031: verify desktop/phone and keyboard flows, then refresh media before tagging
 
-## Stage 3 — Better learning decisions
+## Then — Trustworthy learning
 
-Goal: improve recommendations with stronger evidence.
+Goal: connect feedback to inspectable evidence and evaluate readiness honestly.
 
-- question difficulty and learning objectives
-- spaced retrieval queue
-- recency-aware mastery trends
-- separate confidence from demonstrated knowledge
-- validate readiness against repeated mock-exam scores
-- study plan based on exam date and available study time
-- refreshed README media showing the subject flow
+- TASK-014: structured source citations and local supporting excerpts
+- TASK-018: compare prior readiness with later mock results, distinguish repeated evidence and exam conditions, and define behavior when content changes
+- Keep deterministic study workflows available without an AI provider
 
-## Stage 4 — Smoother building
+## Then — Easier material preparation
 
-Goal: make the build step easier without making AI mandatory or metered.
+Goal: reduce friction in the existing user-controlled build path.
 
-- local text extraction cache so every agent can read PDF and DOCX materials
-- structured citations (file and page) shown in Learn and feedback
-- run an installed CLI agent from the app with progress
-- fully offline builds through a local model such as Ollama
-- semantic grading with deterministic rubric safeguards
+- TASK-013: offline text extraction and previews for PDF/DOCX materials
+- Observe learners completing creation, building, recovery, and first practice before expanding automation
+- TASK-030: optional installed-agent launcher after the reliability gate; explicit provider disclosure, cancellation, private logs, and validated output promotion
 
-## Stage 5 — Exploratory voice practice
+## Later — Better study decisions and optional models
 
-Goal: support oral rehearsal after the core learning loop is proven.
+- TASK-015: spaced retrieval scheduling
+- TASK-019: supported Python baseline update
+- TASK-016: fully offline builds through a local model
+- Difficulty, learning objectives, study planning, and semantic feedback remain future work requiring concrete tasks before implementation
+- Cloud-provider TASK-017 remains cancelled; the learner's existing assistant handles build-time AI
 
-- question read-aloud
-- recorded answer with explicit consent
-- speech-to-text review
-- oral feedback and follow-up questions
+## Exploratory — Voice practice
+
+Question read-aloud, consent-based recording, speech-to-text review, and oral follow-ups remain exploratory until the core learning loop is reliable. No delivery date is committed.

@@ -3,7 +3,7 @@ id: TASK-030
 title: Run an installed CLI agent from the Content page
 type: feature
 status: backlog
-priority: medium
+priority: low
 area: ai
 created: 2026-09-25
 ---
@@ -22,3 +22,9 @@ The Content page shows the command to give a coding agent (TASK-028). Running it
 ## Notes
 
 Vendors have changed their rules for programmatic use of subscriptions several times in 2026; keep the launcher optional and the terminal path documented.
+
+## Review update — 2026-09-29
+
+Defer until import integrity, validation recovery, grading, and subject-session isolation (TASK-042–TASK-046) are complete. The existing manual assistant handoff already provides a build path. Evaluate automatic launching only after observing where learners actually get stuck.
+
+Before implementation, specify cancellation, duplicate-run prevention, log privacy, explicit provider consent, and safe promotion of a validated candidate package.
