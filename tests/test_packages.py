@@ -201,3 +201,18 @@ def test_subject_files_round_trip(tmp_path, demo_subject):
 )
 def test_material_names_are_flattened(raw, expected):
     assert safe_material_name(raw) == expected
+
+
+@pytest.mark.parametrize("level", ["subjects", "subject", "materials", "file"])
+def test_subject_storage_rejects_symlink_escapes(tmp_path, level):
+    files = SubjectFiles(tmp_path / "private")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    paths = {"subjects": files.private_dir / "subjects", "subject": files.subject_dir("safe"),
+             "materials": files.materials_dir("safe"), "file": files.materials_dir("safe") / "notes.md"}
+    link = paths[level]
+    link.parent.mkdir(parents=True, exist_ok=True)
+    link.symlink_to(outside / "notes.md" if level == "file" else outside)
+    with pytest.raises(ValueError, match="links"):
+        files.save_material("safe", "notes.md", b"synthetic")
+    assert list(outside.iterdir()) == []

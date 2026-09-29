@@ -21,6 +21,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- Subject archives now reject unsafe ids, paths, links, duplicate filenames, malformed manifests, and oversized contents before import; subject storage rejects symlink escapes (TASK-042).
+
 - The study store is no longer cached across runs, so pulling a new version no longer crashes the Mock exam page with a stale `StudyStore` until the app is restarted (TASK-038).
 
 ### Changed
