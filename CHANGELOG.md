@@ -25,6 +25,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Reprioritized the backlog after an implementation review: archive safety, lossless imports, validation recovery, Unicode grading, and subject-isolated exam state now precede new automation; the roadmap distinguishes implemented work from tagged releases (TASK-041).
+
 - The library lists subjects by last activity, most recent first, with never-studied ones after by exam date; *+ New subject* is a button in the header instead of the first card, and cards share one height (TASK-040).
 - Subject tabs are ordered by use: Overview, Learn, Practice, Mock exam, Progress, then Diagnostic, Content, and Settings (TASK-034).
 - Creating a subject asks only for a name, exam date, and target, then opens the Content page; the material checkboxes are gone, materials are real files now (TASK-028).
