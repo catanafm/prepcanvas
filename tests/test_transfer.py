@@ -67,3 +67,71 @@ def test_broken_archives_are_rejected(tmp_path):
         archive.writestr("subject.json", json.dumps({"format": 99, "subject": {"id": "x"}}))
     with pytest.raises(ArchiveError, match="incompatible"):
         inspect_archive(buffer.getvalue())
+
+
+def make_archive(subject_id="synthetic", entries=None, **payload):
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr("subject.json", json.dumps({"format": 1, "subject": {"id": subject_id, "name": "Synthetic"}, **payload}))
+        for name, value in (entries or {}).items():
+            archive.writestr(name, value)
+    return buffer.getvalue()
+
+
+@pytest.mark.parametrize("subject_id", ["../../escaped", "/tmp/escaped", "a/b", "a\\b", "x\n", "sustainable-business-demo", 1, []])
+def test_import_rejects_unsafe_subject_ids_without_mutation(tmp_path, subject_id):
+    store = StudyStore(tmp_path / "db.sqlite3")
+    files = SubjectFiles(tmp_path / "private")
+    with pytest.raises(ArchiveError):
+        import_subject(store, files, make_archive(subject_id, {"brief.json": "{}"}))
+    assert store.list_subjects() == []
+    assert not files.private_dir.exists()
+
+
+@pytest.mark.parametrize("entries", [
+    {"../brief.json": "{}"}, {"/brief.json": "{}"}, {"materials/../a.md": "x"},
+    {"materials/a b.md": "x", "materials/a-b.md": "y"}, {"materials/a.exe": "x"},
+])
+def test_archive_rejects_unsafe_members(entries):
+    with pytest.raises(ArchiveError):
+        inspect_archive(make_archive(entries=entries))
+
+
+def test_archive_limits_are_checked_before_reading_members(monkeypatch):
+    from prepcanvas import transfer
+    data = make_archive(entries={"materials/a.md": "123456"})
+    monkeypatch.setattr(transfer, "MAX_ARCHIVE_MEMBERS", 1)
+    with pytest.raises(ArchiveError, match="limit"):
+        inspect_archive(data)
+    monkeypatch.setattr(transfer, "MAX_ARCHIVE_MEMBERS", 100)
+    monkeypatch.setattr(transfer, "MAX_ARCHIVE_BYTES", 3)
+    with pytest.raises(ArchiveError, match="limit"):
+        inspect_archive(data)
+
+
+def test_archive_rejects_symlink_member():
+    member = zipfile.ZipInfo("materials/a.md")
+    member.create_system = 3
+    member.external_attr = 0o120777 << 16
+    with pytest.raises(ArchiveError, match="link"):
+        inspect_archive(make_archive(entries={member: "elsewhere"}))
+
+
+@pytest.mark.parametrize("payload", [{"subject": []}, {"subject": {"id": "ok"}}, {"attempts": {}}])
+def test_malformed_manifest_is_recoverable(payload):
+    with pytest.raises(ArchiveError):
+        inspect_archive(make_archive(**payload))
+
+
+def test_import_rejects_existing_subject_symlink(tmp_path):
+    store = StudyStore(tmp_path / "db.sqlite3")
+    files = SubjectFiles(tmp_path / "private")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    folder = files.subject_dir("synthetic")
+    folder.parent.mkdir(parents=True)
+    folder.symlink_to(outside, target_is_directory=True)
+    with pytest.raises(ArchiveError, match="links"):
+        import_subject(store, files, make_archive(entries={"brief.json": "{}"}))
+    assert list(outside.iterdir()) == []
+    assert store.list_subjects() == []

@@ -362,24 +362,38 @@ class SubjectFiles:
     def __init__(self, private_dir: Path):
         self.private_dir = Path(private_dir)
 
+    def _checked_path(self, path: Path) -> Path:
+        root = self.private_dir.resolve()
+        relative = path.relative_to(self.private_dir)
+        current = self.private_dir
+        for part in relative.parts:
+            current = current / part
+            if current.is_symlink():
+                raise ValueError("Symbolic links are not allowed in subject storage.")
+        if root not in path.resolve().parents:
+            raise ValueError("Subject path must stay inside private storage.")
+        return path
+
     def subject_dir(self, subject_id: str) -> Path:
-        return self.private_dir / "subjects" / subject_id
+        if not isinstance(subject_id, str) or not SLUG.fullmatch(subject_id):
+            raise ValueError("Subject id must be a lowercase slug.")
+        return self._checked_path(self.private_dir / "subjects" / subject_id)
 
     def materials_dir(self, subject_id: str) -> Path:
-        return self.subject_dir(subject_id) / MATERIALS_DIR
+        return self._checked_path(self.subject_dir(subject_id) / MATERIALS_DIR)
 
     def package_path(self, subject_id: str) -> Path:
-        return self.subject_dir(subject_id) / PACKAGE_FILE
+        return self._checked_path(self.subject_dir(subject_id) / PACKAGE_FILE)
 
     def brief_path(self, subject_id: str) -> Path:
-        return self.subject_dir(subject_id) / BRIEF_FILE
+        return self._checked_path(self.subject_dir(subject_id) / BRIEF_FILE)
 
     def list_materials(self, subject_id: str) -> list:
         folder = self.materials_dir(subject_id)
         if not folder.is_dir():
             return []
         return sorted(
-            ({"name": item.name, "bytes": item.stat().st_size} for item in folder.iterdir() if item.is_file() and not item.name.startswith(".")),
+            ({"name": item.name, "bytes": self._checked_path(item).stat().st_size} for item in folder.iterdir() if item.is_file() and not item.name.startswith(".")),
             key=lambda item: item["name"].casefold(),
         )
 
@@ -391,12 +405,12 @@ class SubjectFiles:
             raise ValueError(f"'{clean}' is larger than {MAX_MATERIAL_BYTES // (1024 * 1024)} MB.")
         folder = self.materials_dir(subject_id)
         folder.mkdir(parents=True, exist_ok=True)
-        target = folder / clean
+        target = self._checked_path(folder / clean)
         target.write_bytes(content)
         return target
 
     def remove_material(self, subject_id: str, name: str):
-        target = self.materials_dir(subject_id) / safe_material_name(name)
+        target = self._checked_path(self.materials_dir(subject_id) / safe_material_name(name))
         if target.is_file():
             target.unlink()
 

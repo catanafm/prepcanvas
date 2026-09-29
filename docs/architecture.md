@@ -80,3 +80,11 @@ Overall readiness is the mean of topic mastery. A subject is marked ready only w
 ## Data flow inside the app
 
 The UI never reads materials. It loads the package through `SubjectFiles.load_package`, merges the database record (name, exam date, target, status) with the package content (topics, questions, sources), and passes the result to the same catalog, grading, and readiness code the sample uses. A subject without a valid package shows a setup checklist instead of a topic map, and every study mode points to the Content page.
+
+### Archive boundaries
+
+Subject archive imports accept slug ids and a bounded set of files only: subject.json,
+package.json, brief.json, and supported materials. The bundled sample id is reserved.
+Archives are limited to 1,000 members and 256 MB compressed/expanded, with 10 MB
+metadata files and 25 MB individual materials. Subject storage rejects symlinks;
+imports cannot redirect writes through an existing subject or material link.

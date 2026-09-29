@@ -2,7 +2,7 @@
 id: TASK-042
 title: Confine subject archives to validated private paths
 type: fix
-status: backlog
+status: done
 priority: high
 area: storage
 created: 2026-09-29
@@ -18,12 +18,18 @@ The archive manifest id is passed directly to SubjectFiles.subject_dir. A synthe
 
 ## Acceptance criteria
 
-- [ ] Validate archive ids as strict subject slugs before any database or filesystem mutation; reject absolute paths and traversal
-- [ ] Enforce resolved-path containment in SubjectFiles, including symlink escapes, and reserve the bundled sample id from user imports
-- [ ] Validate the manifest shape and archive member names; reject collisions after filename normalization
-- [ ] Bound member count and total uncompressed bytes before extraction and report ArchiveError without a traceback
-- [ ] Add synthetic traversal, absolute-path, symlink, malformed-manifest, and archive-limit regression tests
+- [x] Validate archive ids as strict subject slugs before any database or filesystem mutation; reject absolute paths and traversal
+- [x] Enforce resolved-path containment in SubjectFiles, including symlink escapes, and reserve the bundled sample id from user imports
+- [x] Validate the manifest shape and archive member names; reject collisions after filename normalization
+- [x] Bound member count and total uncompressed bytes before extraction and report ArchiveError without a traceback
+- [x] Add synthetic traversal, absolute-path, symlink, malformed-manifest, and archive-limit regression tests
 
 ## Notes
 
 Use synthetic content and temporary database/private directories. See [the review](../docs/reviews/2026-09-29.md).
+
+## Implementation
+
+Subject archives now reject unsafe ids, paths, links, duplicate filenames, malformed manifests, and oversized contents before import; subject storage rejects symlink escapes
+
+Validation: focused regression tests and `./scripts/run_tests.sh -q`.

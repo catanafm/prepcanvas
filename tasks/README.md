@@ -38,7 +38,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-039](TASK-039-timed-mock-exam.md) | Time the mock exam like the real one | feature | high | done |
 | [TASK-040](TASK-040-library-layout.md) | Put subjects first in the library and give the cards one height | fix | medium | done |
 | [TASK-041](TASK-041-review-and-backlog.md) | Review the current implementation and reprioritize the backlog | docs | high | done |
-| [TASK-042](TASK-042-archive-boundaries.md) | Confine subject archives to validated private paths | fix | high | backlog |
+| [TASK-042](TASK-042-archive-boundaries.md) | Confine subject archives to validated private paths | fix | high | done |
 | [TASK-043](TASK-043-atomic-subject-import.md) | Preserve existing data when an import or replacement fails | fix | high | backlog |
 | [TASK-044](TASK-044-total-package-validation.md) | Return structured errors for malformed package values | fix | high | backlog |
 | [TASK-045](TASK-045-unicode-grading.md) | Preserve non-English answers and declare grading language support | fix | high | backlog |
@@ -70,3 +70,5 @@ See [the implementation and product review](../docs/reviews/2026-09-29.md) for e
 - **Next release, version TBD:** reliability gate plus TASK-031; update version/changelog and run the release checklist before tagging.
 - **Next product milestone:** traceable sources and readiness evaluation (TASK-014, TASK-018), followed by smoother extraction (TASK-013).
 - **Later:** spaced review, optional agent launcher, and offline model builds; no dates committed.
+
+| [TASK-047](TASK-047-build-private-subject.md) | Build and validate a private subject package | chore | medium | in-progress |

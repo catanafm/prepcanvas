@@ -3,14 +3,20 @@
 import io
 import json
 import zipfile
+import stat
+from pathlib import PurePosixPath
 from datetime import datetime, timezone
 
-from prepcanvas.packages import BRIEF_FILE, MATERIALS_DIR, PACKAGE_FILE, SubjectFiles, safe_material_name
+from prepcanvas.packages import BRIEF_FILE, MATERIALS_DIR, PACKAGE_FILE, SubjectFiles, safe_material_name, SLUG, MATERIAL_SUFFIXES, MAX_MATERIAL_BYTES
 from prepcanvas.storage import StudyStore
 
 
 ARCHIVE_FORMAT = 1
 MANIFEST = "subject.json"
+MAX_ARCHIVE_MEMBERS = 1000
+MAX_ARCHIVE_BYTES = 256 * 1024 * 1024
+MAX_METADATA_BYTES = 10 * 1024 * 1024
+SAMPLE_ID = "sustainable-business-demo"
 
 
 class ArchiveError(ValueError):
@@ -38,14 +44,58 @@ def export_subject(store: StudyStore, files: SubjectFiles, subject_id: str) -> b
 
 
 def _open(data: bytes) -> zipfile.ZipFile:
+    archive = None
     try:
+        if len(data) > MAX_ARCHIVE_BYTES:
+            raise ArchiveError("Archive exceeds the 256 MB limit.")
         archive = zipfile.ZipFile(io.BytesIO(data))
+        members = archive.infolist()
+        if len(members) > MAX_ARCHIVE_MEMBERS or sum(m.file_size for m in members) > MAX_ARCHIVE_BYTES:
+            raise ArchiveError("Archive exceeds the file count or expanded size limit.")
+        targets = set()
+        for member in members:
+            name = member.filename
+            parts = PurePosixPath(name).parts
+            mode = member.external_attr >> 16
+            if stat.S_ISLNK(mode) or member.flag_bits & 1 or "\\" in name:
+                raise ArchiveError("Archive contains a link, encrypted file, or unsafe path.")
+            if name in (MANIFEST, PACKAGE_FILE, BRIEF_FILE):
+                target = name
+                limit = MAX_METADATA_BYTES
+            elif name == MATERIALS_DIR + "/" and member.is_dir():
+                continue
+            elif len(parts) == 2 and parts[0] == MATERIALS_DIR and not member.is_dir():
+                clean = safe_material_name(parts[1])
+                if parts[1] in (".", "..") or PurePosixPath(clean).suffix not in MATERIAL_SUFFIXES:
+                    raise ArchiveError("Archive contains an unsupported material.")
+                target = MATERIALS_DIR + "/" + clean
+                limit = MAX_MATERIAL_BYTES
+            else:
+                raise ArchiveError("Archive contains an unexpected or unsafe path.")
+            if target.casefold() in targets or member.file_size > limit:
+                raise ArchiveError("Archive contains duplicate filenames or an oversized file.")
+            targets.add(target.casefold())
         manifest = json.loads(archive.read(MANIFEST).decode("utf-8"))
-    except (zipfile.BadZipFile, KeyError, UnicodeDecodeError, json.JSONDecodeError):
-        raise ArchiveError("This file is not a PrepCanvas subject archive.")
-    if manifest.get("format") != ARCHIVE_FORMAT or not isinstance(manifest.get("subject"), dict) or not manifest["subject"].get("id"):
-        raise ArchiveError("This archive was made by an incompatible PrepCanvas version.")
-    return archive
+        if not isinstance(manifest, dict) or manifest.get("format") != ARCHIVE_FORMAT:
+            raise ArchiveError("This archive was made by an incompatible PrepCanvas version.")
+        subject = manifest.get("subject")
+        if not isinstance(subject, dict) or not isinstance(subject.get("id"), str) or not SLUG.fullmatch(subject["id"]):
+            raise ArchiveError("Archive subject id must be a lowercase slug.")
+        if subject["id"] == SAMPLE_ID:
+            raise ArchiveError("The sample subject id is reserved; add the sample from the library.")
+        if not isinstance(subject.get("name"), str) or not subject["name"].strip():
+            raise ArchiveError("Archive subject needs a name.")
+        if not isinstance(manifest.get("attempts", []), list):
+            raise ArchiveError("Archive attempts must be a list.")
+        return archive
+    except Exception as error:
+        if archive is not None:
+            archive.close()
+        if isinstance(error, ArchiveError):
+            raise
+        if isinstance(error, (zipfile.BadZipFile, KeyError, UnicodeDecodeError, ValueError, RuntimeError, NotImplementedError)):
+            raise ArchiveError("This file is not a PrepCanvas subject archive.") from error
+        raise
 
 
 def inspect_archive(data: bytes) -> dict:
@@ -53,6 +103,7 @@ def inspect_archive(data: bytes) -> dict:
     archive = _open(data)
     manifest = json.loads(archive.read(MANIFEST).decode("utf-8"))
     names = archive.namelist()
+    archive.close()
     return {
         "id": manifest["subject"]["id"],
         "name": manifest["subject"]["name"],
@@ -68,6 +119,14 @@ def import_subject(store: StudyStore, files: SubjectFiles, data: bytes, replace:
     archive = _open(data)
     manifest = json.loads(archive.read(MANIFEST).decode("utf-8"))
     subject_id = manifest["subject"]["id"]
+    try:
+        files.subject_dir(subject_id)
+        files.materials_dir(subject_id)
+        files.package_path(subject_id)
+        files.brief_path(subject_id)
+    except ValueError as error:
+        archive.close()
+        raise ArchiveError(str(error)) from error
     if store.get_subject(subject_id):
         if not replace:
             raise SubjectExists(subject_id)
@@ -82,4 +141,5 @@ def import_subject(store: StudyStore, files: SubjectFiles, data: bytes, replace:
     for name in archive.namelist():
         if name.startswith(f"{MATERIALS_DIR}/") and not name.endswith("/"):
             files.save_material(subject_id, safe_material_name(name.split("/", 1)[1]), archive.read(name))
+    archive.close()
     return subject_id
