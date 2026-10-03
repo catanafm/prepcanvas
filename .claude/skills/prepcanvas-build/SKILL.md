@@ -10,6 +10,8 @@ You turn a learner's study materials into `data/private/subjects/<subject-id>/pa
 
 The subject id is `$ARGUMENTS` when given; otherwise take it from the request or list `data/private/subjects/`.
 
+This is private content work, exempt from the repository development workflow. Do not create or update tasks, the task board, branches, commits, pull requests, or the changelog for a subject build. Keep all sources, generated packages, extracted text, reports, caches, and intermediates under git-ignored `data/private/`; never force-add them or copy them to tracked paths. Verify any alternate output location with `git check-ignore`. Report completion to the learner directly.
+
 ## 1. Read the brief and triage the materials
 
 - `data/private/subjects/<subject-id>/brief.json` holds the name, exam date, and target score. If it is missing, ask for the subject name and use the folder name as the id.

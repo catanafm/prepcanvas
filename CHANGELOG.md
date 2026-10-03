@@ -32,6 +32,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Changed
 
+- Private study-content builds no longer create repository tasks, branches, commits, pull requests, or release entries; all content and intermediates stay in ignored private storage (TASK-048).
+
 - Reprioritized the backlog after an implementation review: archive safety, lossless imports, validation recovery, Unicode grading, and subject-isolated exam state now precede new automation; the roadmap distinguishes implemented work from tagged releases (TASK-041).
 
 - The library lists subjects by last activity, most recent first, with never-studied ones after by exam date; *+ New subject* is a button in the header instead of the first card, and cards share one height (TASK-040).
