@@ -39,7 +39,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-040](TASK-040-library-layout.md) | Put subjects first in the library and give the cards one height | fix | medium | done |
 | [TASK-041](TASK-041-review-and-backlog.md) | Review the current implementation and reprioritize the backlog | docs | high | done |
 | [TASK-042](TASK-042-archive-boundaries.md) | Confine subject archives to validated private paths | fix | high | done |
-| [TASK-043](TASK-043-atomic-subject-import.md) | Preserve existing data when an import or replacement fails | fix | high | backlog |
+| [TASK-043](TASK-043-atomic-subject-import.md) | Preserve existing data when an import or replacement fails | fix | high | done |
 | [TASK-044](TASK-044-total-package-validation.md) | Return structured errors for malformed package values | fix | high | done |
 | [TASK-045](TASK-045-unicode-grading.md) | Preserve non-English answers and declare grading language support | fix | high | backlog |
 | [TASK-046](TASK-046-subject-exam-state.md) | Isolate active exam sessions by subject and sitting | fix | high | backlog |
@@ -61,6 +61,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 4. **Later:** TASK-030, TASK-015, TASK-019, TASK-016. CLI launch remains optional; cloud-provider TASK-017 stays cancelled.
 
 See [the implementation and product review](../docs/reviews/2026-09-29.md) for evidence and scope.
+
 
 ## Milestones
 

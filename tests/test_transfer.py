@@ -135,3 +135,89 @@ def test_import_rejects_existing_subject_symlink(tmp_path):
         import_subject(store, files, make_archive(entries={"brief.json": "{}"}))
     assert list(outside.iterdir()) == []
     assert store.list_subjects() == []
+
+
+def snapshot(store, files):
+    return (store.export_subject("statistics-101"), {
+        p.relative_to(files.subject_dir("statistics-101")).as_posix(): p.read_bytes()
+        for p in files.subject_dir("statistics-101").rglob("*") if p.is_file()
+    })
+
+
+@pytest.mark.parametrize("payload", [
+    {"attempts": [{}]}, {"profile": {"confidence": 3}},
+    {"attempts": [{"mode": "practice", "score": 2, "max_score": 1}]},
+    {"subject": {"id": "statistics-101", "name": "Replacement", "exam_date": "bad"}},
+])
+def test_invalid_replacement_preserves_everything(tmp_path, demo_subject, payload):
+    store, files = populated(tmp_path, demo_subject)
+    before = snapshot(store, files)
+    with pytest.raises(ArchiveError):
+        import_subject(store, files, make_archive("statistics-101", **payload), replace=True)
+    assert snapshot(store, files) == before
+
+
+@pytest.mark.parametrize("entries", [
+    {"package.json": '{"topics": 1}'}, {"brief.json": "[]"},
+    {"materials/notes.exe": "bad"}, {"package.json": b"\xff"},
+])
+def test_invalid_archive_files_preserve_everything(tmp_path, demo_subject, entries):
+    store, files = populated(tmp_path, demo_subject)
+    before = snapshot(store, files)
+    with pytest.raises(ArchiveError):
+        import_subject(store, files, make_archive("statistics-101", entries), replace=True)
+    assert snapshot(store, files) == before
+
+
+@pytest.mark.parametrize("failure", ["stage", "database", "promotion", "commit"])
+def test_import_failure_rolls_back_database_and_files(tmp_path, demo_subject, monkeypatch, failure):
+    from contextlib import contextmanager
+    from pathlib import Path
+    import sqlite3
+    store, files = populated(tmp_path, demo_subject)
+    before = snapshot(store, files)
+    data = export_subject(store, files, "statistics-101")
+    if failure == "stage":
+        original = Path.write_bytes
+        def fail_stage(path, data):
+            if ".subject-import-" in str(path):
+                raise OSError("synthetic disk failure")
+            return original(path, data)
+        monkeypatch.setattr(Path, "write_bytes", fail_stage)
+    elif failure == "database":
+        original = store._insert_import
+        def fail_insert(connection, payload):
+            original(connection, payload)
+            raise sqlite3.OperationalError("synthetic database failure")
+        monkeypatch.setattr(store, "_insert_import", fail_insert)
+    elif failure == "promotion":
+        original = Path.rename
+        def fail_promote(path, target):
+            if path == files.subject_dir("statistics-101"):
+                return original(path, target)
+            if "candidate" in path.parts and target == files.subject_dir("statistics-101"):
+                raise OSError("synthetic promotion failure")
+            return original(path, target)
+        monkeypatch.setattr(Path, "rename", fail_promote)
+    else:
+        original = store.import_transaction
+        @contextmanager
+        def fail_commit(payload, replace=False):
+            with original(payload, replace):
+                yield
+                raise sqlite3.OperationalError("synthetic commit failure")
+        monkeypatch.setattr(store, "import_transaction", fail_commit)
+    with pytest.raises(ArchiveError, match="unchanged"):
+        import_subject(store, files, data, replace=True)
+    assert snapshot(store, files) == before
+    assert not list(files.private_dir.glob(".subject-import-*"))
+
+
+def test_profile_failure_rolls_back_direct_storage_import(tmp_path, demo_subject):
+    store, files = populated(tmp_path, demo_subject)
+    payload = store.export_subject("statistics-101")
+    payload["subject"]["id"] = "new-subject"
+    payload["profile"].pop("strategy_id")
+    with pytest.raises(KeyError):
+        store.import_subject(payload)
+    assert store.get_subject("new-subject") is None

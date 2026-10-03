@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+
 - The mock exam runs against the clock: questions appear after *Start exam*, the limit comes from the exam blueprint (`duration_minutes`) or about a minute per point and can be changed or switched off, a live countdown warns in the last five minutes, and after the limit unanswered questions can be handed in as blanks. Results and the Progress list show the time used and whether the limit was exceeded (TASK-039).
 - Practice shows one question at a time with *Next question* (never-answered first, then the ones answered longest ago) and *Random question*, plus the position in the focus, the last score, and how many questions are still unanswered (TASK-036).
 - The sidebar shows the open subject with its exam countdown, last activity, readiness, coverage, and target (TASK-037).
@@ -20,6 +21,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - A subject library home screen: welcome, *In progress* and *Completed* groups, a *+ New subject* card, and per-subject cards with exam countdown, last activity, readiness, and coverage. Subjects can be marked as completed and reopened (TASK-023).
 
 ### Fixed
+
+- Archive replacement validates and stages the complete subject before committing, restores previous data on failures, and preserves the active package when a JSON upload is rejected (TASK-043).
 
 - Malformed package fields now return structured validation errors; the library, Content page, and CLI remain usable while invalid files are kept for correction (TASK-044).
 
