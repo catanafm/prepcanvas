@@ -34,7 +34,7 @@ This is private content work, exempt from the repository development workflow. D
 - Multiple choice: three to five distinct options, one correct, plausible distractors drawn from the common mistakes in the materials.
 - Short answer: a `model_answer` written the way a strong student would, then `rubric_points` whose `accepted_phrases` and `keywords` appear in that model answer and in reasonable paraphrases. Avoid keywords that appear in the prompt. Rubric points must add up to the question's points.
 - `explanation` is shown after every answer, right or wrong: state why the answer is what it is, with a pointer into the materials.
-- Do not invent facts the materials do not support. Write in the language of the materials unless asked otherwise.
+- Do not invent facts the materials do not support. Write in the language of the materials unless asked otherwise. Set `grading_language` on every question (for example `en`, `de`, `ru`). English short answers use keyword rubrics. Other languages use full model-answer matching only; paraphrases, morphology, and negation are not interpreted. State this limitation in the build report. Multiple-choice grading preserves Unicode in every language.
 
 ## 4. Mirror the exam: blueprint and pool
 

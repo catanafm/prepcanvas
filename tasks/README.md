@@ -41,7 +41,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-042](TASK-042-archive-boundaries.md) | Confine subject archives to validated private paths | fix | high | done |
 | [TASK-043](TASK-043-atomic-subject-import.md) | Preserve existing data when an import or replacement fails | fix | high | done |
 | [TASK-044](TASK-044-total-package-validation.md) | Return structured errors for malformed package values | fix | high | done |
-| [TASK-045](TASK-045-unicode-grading.md) | Preserve non-English answers and declare grading language support | fix | high | backlog |
+| [TASK-045](TASK-045-unicode-grading.md) | Preserve non-English answers and declare grading language support | fix | high | done |
 | [TASK-046](TASK-046-subject-exam-state.md) | Isolate active exam sessions by subject and sitting | fix | high | backlog |
 | [TASK-014](TASK-014-topic-map-citations.md) | Show structured citations for topics and questions | feature | high | backlog |
 | [TASK-018](TASK-018-validate-readiness.md) | Validate readiness against mock-exam trends | feature | medium | backlog |

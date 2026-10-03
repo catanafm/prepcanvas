@@ -60,7 +60,7 @@ What to produce
 6. Follow the schema below exactly. Every `model_answer` must earn full marks against its own rubric, so pick accepted phrases and keywords that actually appear in the model answer.
 7. Reply with only the JSON object, no commentary, so I can save it as `{display_path(subject_dir)}/{PACKAGE_FILE}`. Use `"id": "{subject_id}"`.
 
-Do not invent facts that the materials do not support. Write in the language of the materials unless I ask otherwise.
+Do not invent facts that the materials do not support. Write in the language of the materials unless I ask otherwise. Set `grading_language` on every question to its lowercase language code (for example `en`, `de`, `ru`). English short answers use keyword rubrics; other languages use full model-answer matching only, without interpreting paraphrases, morphology, or negation. Multiple-choice grading preserves Unicode in every language.
 
 --- Schema ---
 

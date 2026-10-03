@@ -1,4 +1,5 @@
 import re
+import unicodedata
 
 
 NEGATIONS = {"no", "not", "never"}
@@ -47,9 +48,9 @@ NOT_ONLY = re.compile(r"\bnot\s+(?:only|just|merely)\b", re.IGNORECASE)
 
 
 def normalize_text(value: str) -> str:
-    lowered = (value or "").lower()
+    lowered = unicodedata.normalize("NFC", unicodedata.normalize("NFKC", value or "").casefold())
     lowered = re.sub(r"n['’]t\b", " not", lowered)
-    return " ".join(re.sub(r"[^a-z0-9\s-]", " ", lowered).split())
+    return " ".join("".join(char if char.isspace() or char == "-" or unicodedata.category(char)[0] in "LMN" else " " for char in lowered).split())
 
 
 def _words(normalized: str) -> list:
@@ -58,6 +59,8 @@ def _words(normalized: str) -> list:
 
 def stem(word: str) -> str:
     """Reduce a word to a crude stem so inflected forms compare equal."""
+    if not word.isascii():
+        return word
     word = NUMBER_WORDS.get(word, word)
     if word.isdigit():
         return word
@@ -153,7 +156,7 @@ def grade_question(question: dict, answer: str) -> dict:
     """Grade one demo question without an external AI service."""
     is_answered = bool(normalize_text(answer))
     if question["type"] == "multiple_choice":
-        is_correct = normalize_text(answer) == normalize_text(question["correct_answer"])
+        is_correct = is_answered and normalize_text(answer) == normalize_text(question["correct_answer"])
         awarded = question["points"] if is_correct else 0
         return {
             "question_id": question["id"],
@@ -171,7 +174,17 @@ def grade_question(question: dict, answer: str) -> dict:
     missing = []
     score = 0
     points = question["rubric_points"]
-    for point, is_matched in zip(points, _match_rubric_points(answer, points)):
+    language = question.get("grading_language", "en").split("-", 1)[0]
+    if language == "en":
+        matches = _match_rubric_points(answer, points) if is_answered else [False] * len(points)
+        grading_note = "English keyword-based rubric check; it does not establish semantic correctness."
+    else:
+        matches = [is_answered and normalize_text(answer) == normalize_text(question["model_answer"])] * len(points)
+        grading_note = (
+            "This language uses full model-answer matching only. Paraphrases, morphology, and negation are not "
+            "interpreted; a mismatch is not proof that your answer is wrong. Compare it with the model answer."
+        )
+    for point, is_matched in zip(points, matches):
         if is_matched:
             matched.append(point["label"])
             score += point["points"]
@@ -184,7 +197,8 @@ def grade_question(question: dict, answer: str) -> dict:
         "score": score,
         "max_score": question["points"],
         "is_answered": is_answered,
-        "is_correct": score == question["points"],
+        "is_correct": is_answered and score == question["points"],
+        "grading_note": grading_note,
         "matched_points": matched,
         "missing_points": missing,
         "feedback": question["explanation"],

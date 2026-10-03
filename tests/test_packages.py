@@ -277,3 +277,20 @@ def test_package_promotion_failure_keeps_active_package(tmp_path, demo_subject, 
     with pytest.raises(OSError):
         files.save_package(subject_id, json.dumps(demo_subject).encode())
     assert files.package_path(subject_id).read_bytes() == original
+
+
+@pytest.mark.parametrize("options", [["!!!", "Yes"], ["Café", "CAFE\u0301"]])
+def test_options_must_be_distinguishable_after_normalizing(demo_subject, options):
+    demo_subject["questions"][0]["options"] = options
+    demo_subject["questions"][0]["correct_answer"] = options[0]
+    assert any(issue["path"].endswith(".options") for issue in errors(validate_package(demo_subject)))
+
+
+def test_grading_language_validation_and_warning(demo_subject):
+    question = short_answer(demo_subject)
+    question["grading_language"] = []
+    assert any(issue["path"].endswith(".grading_language") for issue in errors(validate_package(demo_subject)))
+    question["grading_language"] = "de"
+    issues = validate_package(demo_subject)
+    assert not errors(issues)
+    assert any("full model-answer" in issue["message"] for issue in warnings(issues))
