@@ -1,8 +1,14 @@
 # Contributing
 
-PrepCanvas uses a lightweight, task-driven workflow. Every change — feature, fix, refactor, or documentation — starts with a task and ends with a reviewed, squash-merged pull request.
+PrepCanvas uses a lightweight, task-driven workflow. Every repository change — feature, fix, refactor, or public documentation — starts with a task and ends with a reviewed, squash-merged pull request.
 
 All code, documentation, commit messages, and task files are written in English.
+
+## Private study content is not a repository change
+
+Generating, rebuilding, validating, or organizing a learner's study materials is app usage. Do not create tasks, board entries, branches, commits, pull requests, or changelog entries for this work. Store all sources, packages, extracted text, reports, caches, and intermediate artifacts under git-ignored `data/private/`, or an explicitly configured ignored private directory. Never force-add them. Confirm new output locations with `git check-ignore` before using them.
+
+Only separately requested changes to the application, public documentation, or tooling use the development workflow below. Synthetic demo/test fixtures remain repository development work.
 
 ## 1. Tasks
 

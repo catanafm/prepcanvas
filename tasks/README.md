@@ -53,6 +53,10 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-016](TASK-016-local-model-provider.md) | Build packages fully offline with a local model | feature | low | backlog |
 | [TASK-017](TASK-017-cloud-model-provider.md) | Add an opt-in cloud AI provider interface | feature | low | cancelled |
 
+| [TASK-048](TASK-048-private-content-convention.md) | Exempt private study content from repository task tracking | docs | medium | done |
+
+TASK-047 is retired: private content builds are not repository tasks.
+
 ## Current priorities — 2026-09-29
 
 1. **Reliability gate:** TASK-042 → TASK-043 → TASK-044 → TASK-045 → TASK-046. Resolve archive boundaries, data-loss risks, malformed packages, language grading, and cross-subject exam state before another release.
@@ -71,5 +75,3 @@ See [the implementation and product review](../docs/reviews/2026-09-29.md) for e
 - **Next release, version TBD:** reliability gate plus TASK-031; update version/changelog and run the release checklist before tagging.
 - **Next product milestone:** traceable sources and readiness evaluation (TASK-014, TASK-018), followed by smoother extraction (TASK-013).
 - **Later:** spaced review, optional agent launcher, and offline model builds; no dates committed.
-
-| [TASK-047](TASK-047-build-private-subject.md) | Build and validate a private subject package | chore | medium | in-progress |

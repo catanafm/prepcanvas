@@ -31,7 +31,7 @@ PrepCanvas is a local-first, source-grounded exam preparation companion.
 
 Follow [CONTRIBUTING.md](CONTRIBUTING.md). In short:
 
-- Every change starts from a task in `tasks/` (`TASK-NNN`). Create one from `tasks/_template.md` and add it to `tasks/README.md` if none exists.
+- Every repository code, public documentation, or tooling change starts from a task in `tasks/` (`TASK-NNN`). Create one from `tasks/_template.md` and add it to `tasks/README.md` if none exists.
 - Branch: `task/TASK-NNN-short-slug`, from an up-to-date `main`.
 - Commits: Conventional Commits ending with the task ID, e.g. `fix(grading): accept inflected word forms (TASK-002)`.
 - Before finishing: tests pass, acceptance criteria are checked off, task status and board are updated, and `CHANGELOG.md` lists user-visible changes.
@@ -41,3 +41,5 @@ Follow [CONTRIBUTING.md](CONTRIBUTING.md). In short:
 # Building study content for a subject
 
 Learners build the study content of their own subjects with the AI agent they already use. The instructions live in [`.claude/skills/prepcanvas-build/SKILL.md`](.claude/skills/prepcanvas-build/SKILL.md) and work for any agent: read the materials in `data/private/subjects/<subject-id>/materials/`, write `package.json` following [`docs/subject-package.md`](docs/subject-package.md), and run `python -m prepcanvas validate` until it passes. Everything under `data/private/` is the learner's private material: never copy it into the repository.
+
+Private study-content work is exempt from the development workflow: do not create or update a task, board row, branch, commit, pull request, or changelog entry for generating, rebuilding, validating, or organizing a learner’s materials. Keep sources, packages, extracted text, build reports, caches, and intermediate artifacts under git-ignored `data/private/` (or an explicitly configured ignored private directory). Do not copy or force-add them into tracked paths. A separately requested change to application code, public documentation, or tooling still follows the task workflow. Public demos and tests use synthetic content only.
