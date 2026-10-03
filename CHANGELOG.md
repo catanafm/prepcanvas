@@ -22,6 +22,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- Mock exams isolate timers and answers by subject, content revision, selection, and sitting; leaving the page abandons the unfinished attempt and retakes start blank (TASK-046).
+
 - Grading preserves Unicode and distinguishes non-English options; short-answer language support is explicit in packages, build prompts, validation, and feedback (TASK-045).
 
 - Archive replacement validates and stages the complete subject before committing, restores previous data on failures, and preserves the active package when a JSON upload is rejected (TASK-043).

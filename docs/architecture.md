@@ -103,3 +103,13 @@ commit: retain that folder and restore its `previous` directory before retrying.
 Uploaded JSON packages are validated in a temporary file and promoted with an
 atomic file replacement. Rejected content is saved as `rejected-package.json` for
 correction while the active package is unchanged. These files remain private.
+
+### Exam session identity
+
+Each unfinished sitting is identified by subject id, a SHA-256 revision of its
+study content, exam set/variant, and a fresh sitting id. Form and answer widget
+keys include that identity. Leaving Mock exam (including returning to the library)
+abandons the unfinished sitting without saving answers; returning requires Start
+exam again. Changing the selection or package also ends the run. Submitted
+attempts use the sitting id assigned at start. This policy avoids silently
+resuming a timer after Streamlit has discarded form state.

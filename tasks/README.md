@@ -42,7 +42,7 @@ Tasks are listed in planned order. The test suite verifies that this board match
 | [TASK-043](TASK-043-atomic-subject-import.md) | Preserve existing data when an import or replacement fails | fix | high | done |
 | [TASK-044](TASK-044-total-package-validation.md) | Return structured errors for malformed package values | fix | high | done |
 | [TASK-045](TASK-045-unicode-grading.md) | Preserve non-English answers and declare grading language support | fix | high | done |
-| [TASK-046](TASK-046-subject-exam-state.md) | Isolate active exam sessions by subject and sitting | fix | high | backlog |
+| [TASK-046](TASK-046-subject-exam-state.md) | Isolate active exam sessions by subject and sitting | fix | high | done |
 | [TASK-014](TASK-014-topic-map-citations.md) | Show structured citations for topics and questions | feature | high | backlog |
 | [TASK-018](TASK-018-validate-readiness.md) | Validate readiness against mock-exam trends | feature | medium | backlog |
 | [TASK-013](TASK-013-source-preview-classification.md) | Cache extracted text so every agent can read PDF and DOCX materials | feature | medium | backlog |
@@ -59,7 +59,7 @@ TASK-047 is retired: private content builds are not repository tasks.
 
 ## Current priorities — 2026-09-29
 
-1. **Reliability gate:** TASK-042 → TASK-043 → TASK-044 → TASK-045 → TASK-046. Resolve archive boundaries, data-loss risks, malformed packages, language grading, and cross-subject exam state before another release.
+1. **Reliability fixes implemented:** TASK-042–TASK-046. Regression coverage now includes archive boundaries, rollback, malformed packages, Unicode grading, and isolated exam state. Complete release review before tagging.
 2. **Trustworthy learning:** TASK-014, TASK-018. Inspectable evidence and honest readiness take precedence over more generated questions or automation.
 3. **Onboarding and release QA:** TASK-013, TASK-031. Make materials readable, exercise the actual subject flow, and refresh media.
 4. **Later:** TASK-030, TASK-015, TASK-019, TASK-016. CLI launch remains optional; cloud-provider TASK-017 stays cancelled.
