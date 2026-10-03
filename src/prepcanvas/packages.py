@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from prepcanvas.grading import grade_question
+from prepcanvas.grading import grade_question, normalize_text
 
 
 SCHEMA_VERSION = 1
@@ -157,10 +157,17 @@ def _validate_question(question, path: str, topic_ids: set, issues: list) -> Opt
     if _text(question.get("topic_id")) and question["topic_id"] not in topic_ids:
         issues.append(_issue("error", f"{path}.topic_id", f"Unknown topic '{question['topic_id']}'."))
         ok = False
+    language = question.get("grading_language", "en")
+    if not isinstance(language, str) or not re.fullmatch(r"[a-z]{2,3}(?:-[a-z0-9]+)*", language):
+        issues.append(_issue("error", f"{path}.grading_language", "Use a lowercase language code such as 'en', 'de', or 'ru'."))
+        ok = False
     if question.get("type") == "multiple_choice":
         options = question.get("options")
         if not _text_list(options) or len(options) < 2 or len(set(options)) != len(options):
             issues.append(_issue("error", f"{path}.options", "Multiple-choice questions need at least two distinct string options."))
+            ok = False
+        elif any(not normalize_text(option) for option in options) or len({normalize_text(option) for option in options}) != len(options):
+            issues.append(_issue("error", f"{path}.options", "Options must remain nonempty and distinct after text normalization."))
             ok = False
         elif question.get("correct_answer") not in options:
             issues.append(_issue("error", f"{path}.correct_answer", "'correct_answer' must be exactly one of the options."))
@@ -170,6 +177,8 @@ def _validate_question(question, path: str, topic_ids: set, issues: list) -> Opt
             issues.append(_issue("error", f"{path}.model_answer", "Short-answer questions need a 'model_answer'."))
             ok = False
         ok &= _validate_rubric(question, path, issues)
+        if ok and language.split("-", 1)[0] != "en":
+            issues.append(_issue("warning", f"{path}.grading_language", "Only full model-answer matching is available for this language; paraphrases and negation are not interpreted."))
         if ok:
             result = grade_question(question, question["model_answer"])
             if result["score"] < result["max_score"]:

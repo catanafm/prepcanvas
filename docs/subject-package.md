@@ -170,3 +170,18 @@ Warnings (the package loads, but the experience is weaker):
 - a topic without a multiple-choice question is skipped by the diagnostic;
 - a topic with fewer than three questions cannot reach full evidence in the readiness heuristic;
 - rubric points that add up to more than the question's points are capped.
+
+## Grading language
+
+Set `grading_language` on each question to a lowercase language code, such as
+`en`, `de`, or `ru`. Omission means `en` for existing packages. Unicode letters
+and accents are retained; canonically equivalent encodings compare equally.
+Multiple-choice options must be nonempty and distinct after normalization.
+
+English short answers use the existing keyword, suffix, and negation heuristics;
+they do not prove semantic correctness. Other languages use normalized **full
+model-answer matching** only. They do not interpret paraphrases, morphology, or
+negation. A mismatch receives no automatic credit but does not establish that the
+answer is wrong; compare it with the model answer. Validation and feedback state
+this limitation. Choose multiple-choice questions when automatic evaluation of
+non-English paraphrases would otherwise be required.

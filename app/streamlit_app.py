@@ -192,6 +192,8 @@ def render_feedback(question: dict, result: dict):
     else:
         st.error(f'Not yet · {result["score"]}/{result["max_score"]}')
     st.write(result["feedback"])
+    if result.get("grading_note"):
+        st.caption(result["grading_note"])
     if result["matched_points"]:
         st.write("**What you covered:** " + "; ".join(result["matched_points"]))
     if result["missing_points"] and question["type"] == "short_answer":

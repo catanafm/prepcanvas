@@ -174,3 +174,39 @@ def test_every_model_answer_receives_full_credit(demo_subject):
         if question["type"] == "short_answer":
             result = grade_question(question, question["model_answer"])
             assert result["is_correct"], question["id"]
+
+
+@pytest.mark.parametrize("answer, expected", [("Да", 1), ("Нет", 0), ("", 0), ("!!!", 0)])
+def test_cyrillic_options_stay_distinct(answer, expected):
+    question = {"id": "one", "topic_id": "topic", "type": "multiple_choice", "points": 1,
+                "correct_answer": "Да", "explanation": "Synthetic"}
+    result = grade_question(question, answer)
+    assert result["score"] == expected
+    assert result["is_answered"] == (answer in ("Да", "Нет"))
+
+
+def test_accents_and_combining_encodings_are_preserved():
+    from prepcanvas.grading import normalize_text
+    assert normalize_text("Café") == normalize_text("CAFE\u0301")
+    assert normalize_text("sí") != normalize_text("si")
+    assert normalize_text("中文") == "中文"
+
+
+def test_non_english_short_answers_use_full_model_matching():
+    question = {"id": "one", "topic_id": "topic", "type": "short_answer", "points": 1,
+                "grading_language": "ru", "model_answer": "Это верно", "explanation": "Synthetic",
+                "rubric_points": [{"label": "Concept", "points": 1, "accepted_phrases": ["верно"]}]}
+    assert grade_question(question, "Это верно")["score"] == 1
+    result = grade_question(question, "Это не верно")
+    assert result["score"] == 0 and result["is_answered"]
+    assert "negation" in result["grading_note"]
+    assert grade_question(question, "верно")["score"] == 0
+    assert grade_question(question, "")["score"] == 0
+
+
+def test_accented_accepted_phrase_in_english_rubric():
+    question = {"id": "one", "topic_id": "topic", "type": "short_answer", "points": 1,
+                "grading_language": "en", "model_answer": "Use a café", "explanation": "Synthetic",
+                "rubric_points": [{"label": "Concept", "points": 1, "accepted_phrases": ["café"]}]}
+    assert grade_question(question, "Use a café")["score"] == 1
+    assert grade_question(question, "Do not use a café")["score"] == 0
