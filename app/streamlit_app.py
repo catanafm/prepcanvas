@@ -19,6 +19,7 @@ if str(SRC_DIR) not in sys.path:
 from prepcanvas.catalog import diagnostic_questions as select_diagnostic_questions
 from prepcanvas.catalog import get_topic, load_demo_subject
 from prepcanvas.coaching import recommend_strategy
+from prepcanvas.exam_sessions import exam_identity
 from prepcanvas.exams import available_sets, default_duration, describe, exam_questions, format_duration, next_variant, time_status
 from prepcanvas.grading import grade_question, grade_questions
 from prepcanvas.library import exam_countdown, group_subjects, last_activity
@@ -207,12 +208,16 @@ PAGES = ["Overview", "Learn", "Practice", "Mock exam", "Progress", "Diagnostic",
 
 
 def open_subject(subject_id: str):
+    stop_exam()
+    for key in ("mock_variant", "mock_exam_set"):
+        st.session_state.pop(key, None)
     st.session_state["subject_id"] = subject_id
     st.session_state["page"] = PAGES[0]
     st.session_state["view"] = "library"
 
 
 def open_library(view: str = "library"):
+    stop_exam()
     st.session_state["subject_id"] = None
     st.session_state["view"] = view
 
@@ -635,6 +640,7 @@ def select_exam(subject: dict, sittings: list) -> tuple:
 def start_exam(exam_key: str, limit_minutes: int):
     st.session_state["exam_run"] = {
         "key": exam_key,
+        "id": uuid4().hex,
         "started_at": datetime.now(timezone.utc).isoformat(),
         "limit_seconds": int(limit_minutes) * 60,
     }
@@ -696,6 +702,8 @@ name_column.markdown(
     f'<div class="subject-bar">{escape(subject_lookup[selected_id]["name"])}</div>', unsafe_allow_html=True
 )
 page = st.radio("Workspace", PAGES, key="page", horizontal=True, label_visibility="collapsed")
+if page != "Mock exam":
+    stop_exam()
 
 content = load_content(subject_lookup[selected_id])
 subject = merged_subject(subject_lookup[selected_id], content)
@@ -904,16 +912,19 @@ elif page == "Practice":
 elif page == "Mock exam":
     st.title("Mock exam")
     st.write("Feedback stays hidden until the full attempt is submitted.")
+    st.caption("Leaving this page or changing the exam ends the unfinished attempt without saving it. Returning starts a fresh exam.")
     if not subject["questions"]:
+        stop_exam()
         render_needs_content("The mock exam uses the questions of your study content.")
     else:
         sittings = store.list_sittings(selected_id)
         exam_set, variant, exam_set_questions = select_exam(subject, sittings)
-        exam_key = f"{exam_set}_{variant or 0}"
+        exam_key = exam_identity(subject, exam_set, variant)
         run = st.session_state.get("exam_run")
-        if run and run["key"] != exam_key:
+        if run and (run["key"] != exam_key or "id" not in run):
             stop_exam()
             run = None
+            st.info("The exam or its content changed. Start a fresh attempt to use the current questions.")
         if run is None:
             suggested = default_duration(subject, exam_set_questions)
             limit_column, start_column = st.columns([1, 2], vertical_alignment="bottom")
@@ -927,7 +938,7 @@ elif page == "Mock exam":
             st.stop()
         clock = st.empty()  # filled after the form, so a submitted exam stops the countdown
         time_is_up = bool(run["limit_seconds"]) and exam_seconds_used(run) >= run["limit_seconds"]
-        with st.form(f"mock_exam_{exam_key}"):
+        with st.form(f"mock_exam_{exam_key}_{run['id']}"):
             exam_answers = {}
             for index, question in enumerate(exam_set_questions, start=1):
                 st.markdown(f'**{index}. {question["prompt"]}** · {question["points"]} pt')
@@ -936,13 +947,13 @@ elif page == "Mock exam":
                         "Answer",
                         question["options"],
                         index=None,
-                        key=f'exam_{exam_key}_{question["id"]}',
+                        key=f'exam_{exam_key}_{run["id"]}_{question["id"]}',
                         label_visibility="collapsed",
                     )
                 else:
                     exam_answers[question["id"]] = st.text_area(
                         "Answer",
-                        key=f'exam_{exam_key}_{question["id"]}',
+                        key=f'exam_{exam_key}_{run["id"]}_{question["id"]}',
                         label_visibility="collapsed",
                     )
             exam_submitted = st.form_submit_button("Submit mock exam", type="primary")
@@ -961,7 +972,7 @@ elif page == "Mock exam":
             else:
                 used = exam_seconds_used(run)
                 graded = grade_questions(exam_set_questions, {k: v or "" for k, v in exam_answers.items()})
-                sitting = uuid4().hex
+                sitting = run["id"]
                 for result in graded["results"]:
                     store.save_attempt(
                         selected_id, "mock_exam", result, sitting=sitting, exam_set=exam_set, exam_variant=variant,

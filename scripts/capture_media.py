@@ -176,7 +176,7 @@ class Page:
         """Pick an option in the n-th answer radio group, skipping the page navigation."""
         await self.evaluate(
             "[...document.querySelectorAll('[data-testid=\"stMain\"] [role=\"radiogroup\"]')]"
-            ".filter(radios => !radios.closest('.st-key-page'))"
+            ".filter(radios => !radios.closest('.st-key-page') && !radios.closest('.st-key-mock_exam_set'))"
             f"[{group}].querySelectorAll('label[data-baseweb=\"radio\"]')"
             f".forEach(label => {{ if (label.innerText.trim() === {json.dumps(option)}) label.click(); }})"
         )
@@ -213,6 +213,22 @@ class Page:
             f".find(item => item.innerText.trim().startsWith({json.dumps(option)}))"
         )
         await self.settle()
+
+    async def practice_question(self, prompt: str):
+        await self.select(0, "Systems thinking")
+        subject = load_demo_subject()
+        for _ in range(4):
+            shown = await self.evaluate("document.querySelector('.panel').innerText")
+            if prompt in shown:
+                return
+            question = next(q for q in subject["questions"] if q["prompt"] == shown.strip())
+            if question["type"] == "multiple_choice":
+                await self.choose(0, question["correct_answer"])
+            else:
+                await self.type_into(0, question["model_answer"])
+            await self.click_button("Check answer")
+            await self.click_button("Next question")
+        raise RuntimeError("Could not reach the synthetic practice question")
 
     async def click_button(self, label: str):
         await self.evaluate(
@@ -293,13 +309,16 @@ async def capture(url: str, chrome_port: int):
     await page.save("learn.png")
 
     await page.open_page("Practice")
-    await page.select(1, "Why can improving one sustainability metric")
+    await page.practice_question("Why can improving one sustainability metric")
     await page.type_into(0, "It looks at a narrow system boundary.")
     await page.click_button("Check answer")
     await page.scroll_to_text("Partly correct", "center")
     await page.save("practice-feedback.png")
 
     await page.open_page("Mock exam")
+    await page.evaluate("[...document.querySelectorAll('.st-key-mock_exam_set label')].find(label => label.innerText.includes('Every question')).click()")
+    await page.settle()
+    await page.click_button("Start exam")
     multiple_choice = [q["correct_answer"] for q in subject["questions"] if q["type"] == "multiple_choice"]
     short_answers = [q["model_answer"] for q in subject["questions"] if q["type"] == "short_answer"]
     for group, answer in enumerate(multiple_choice):
@@ -344,7 +363,7 @@ async def capture(url: str, chrome_port: int):
     frame(await page.image(), 3500)
 
     await page.open_page("Practice")
-    await page.select(1, "Why can improving one sustainability metric")
+    await page.practice_question("Why can improving one sustainability metric")
     await page.type_into(0, "The metric uses a narrow boundary and ignores trade-offs elsewhere.")
     frame(await page.image(), 2500)
     await page.click_button("Check answer")
@@ -357,7 +376,7 @@ async def capture(url: str, chrome_port: int):
     connection.close()
 
 
-PAGES = ["Overview", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Settings"]
+PAGES = ["Overview", "Diagnostic", "Learn", "Practice", "Mock exam", "Progress", "Content", "Settings"]
 
 
 async def capture_qa(url: str, chrome_port: int, output: Path):
@@ -389,7 +408,7 @@ def main():
     seed_progress(database)
 
     app_port, chrome_port = free_port(), free_port()
-    env = {**os.environ, "PREPCANVAS_DB_PATH": str(database), "PYTHONPATH": str(ROOT / "src")}
+    env = {**os.environ, "PREPCANVAS_DB_PATH": str(database), "PREPCANVAS_PRIVATE_DIR": str(workdir / "private"), "PYTHONPATH": str(ROOT / "src")}
     app = subprocess.Popen(
         [
             sys.executable, "-m", "streamlit", "run", str(ROOT / "app" / "streamlit_app.py"),

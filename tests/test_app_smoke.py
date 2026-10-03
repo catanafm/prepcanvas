@@ -500,3 +500,75 @@ def test_malformed_package_keeps_library_and_content_recoverable(tmp_path, monke
     open_page(app, "Practice")
     assert not app.exception
     assert any(item.label == "Check answer" for item in app.button)
+
+
+def test_switching_subjects_does_not_reuse_timer_or_answers(tmp_path, monkeypatch, demo_subject):
+    database, app = start(tmp_path, monkeypatch)
+    store = StudyStore(database)
+    for subject_id in ("alpha", "beta"):
+        store.create_subject(subject_id, subject_id, "", 80, {})
+        write_package(tmp_path, subject_id, demo_subject)
+    app.run()
+    open_subject(app, "alpha")
+    open_page(app, "Mock exam")
+    button(app, "start_exam").click().run()
+    original_run = dict(app.session_state["exam_run"])
+    answer = next(radio for radio in app.radio if radio.key.startswith("exam_"))
+    answer.set_value(answer.options[0]).run()
+    button(app, "back_to_library").click().run()
+    open_subject(app, "beta")
+    open_page(app, "Mock exam")
+    assert button(app, "start_exam")
+    assert exam_widgets(app) == []
+    button(app, "start_exam").click().run()
+    assert app.session_state["exam_run"]["id"] != original_run["id"]
+    assert app.session_state["exam_run"]["key"].startswith("beta:")
+    assert all(radio.value is None for radio in app.radio if radio.key.startswith("exam_"))
+    assert not app.exception
+
+
+def test_leaving_exam_page_abandons_run_and_return_starts_blank(tmp_path, monkeypatch):
+    _, app = start(tmp_path, monkeypatch)
+    open_subject(app)
+    open_page(app, "Mock exam")
+    button(app, "start_exam").click().run()
+    old_id = app.session_state["exam_run"]["id"]
+    assert any("Leaving this page" in item.value for item in app.caption)
+    open_page(app, "Practice")
+    open_page(app, "Mock exam")
+    assert button(app, "start_exam")
+    button(app, "start_exam").click().run()
+    assert app.session_state["exam_run"]["id"] != old_id
+    assert all(radio.value is None for radio in app.radio if radio.key.startswith("exam_"))
+    assert not app.exception
+
+
+def test_retake_uses_new_sitting_and_blank_widgets(tmp_path, monkeypatch):
+    _, app = start(tmp_path, monkeypatch)
+    open_subject(app)
+    open_page(app, "Mock exam")
+    sit_variant(app)
+    app.run()
+    assert button(app, "start_exam")
+    button(app, "start_exam").click().run()
+    assert all(radio.value is None for radio in app.radio if radio.key.startswith("exam_"))
+    assert all(area.value == "" for area in app.text_area)
+    assert not app.exception
+
+
+def test_content_change_invalidates_active_exam(tmp_path, monkeypatch, demo_subject):
+    write_package(tmp_path, "statistics-101", demo_subject)
+    _, app = start(tmp_path, monkeypatch)
+    create_subject(app, "Statistics 101")
+    open_page(app, "Mock exam")
+    button(app, "start_exam").click().run()
+    old_key = app.session_state["exam_run"]["key"]
+    demo_subject["questions"][0]["prompt"] += " Updated synthetic wording."
+    write_package(tmp_path, "statistics-101", demo_subject)
+    app.run()
+    assert button(app, "start_exam")
+    assert exam_widgets(app) == []
+    assert any("content changed" in item.value for item in app.info)
+    button(app, "start_exam").click().run()
+    assert app.session_state["exam_run"]["key"] != old_key
+    assert not app.exception
