@@ -88,3 +88,18 @@ package.json, brief.json, and supported materials. The bundled sample id is rese
 Archives are limited to 1,000 members and 256 MB compressed/expanded, with 10 MB
 metadata files and 25 MB individual materials. Subject storage rejects symlinks;
 imports cannot redirect writes through an existing subject or material link.
+
+### Import replacement and recovery
+
+Archive imports validate all metadata and stage files in a private
+`.subject-import-*` directory before changing the active subject. A single SQLite
+transaction includes the subject, attempts, and coaching profile; it remains open
+until the candidate folder has replaced the original. Validation, staging,
+promotion, and database failures roll back to the previous subject and files.
+If filesystem rollback itself fails, the error identifies the retained recovery
+folder. Sudden process or machine termination is not a cross-resource atomic
+commit: retain that folder and restore its `previous` directory before retrying.
+
+Uploaded JSON packages are validated in a temporary file and promoted with an
+atomic file replacement. Rejected content is saved as `rejected-package.json` for
+correction while the active package is unchanged. These files remain private.

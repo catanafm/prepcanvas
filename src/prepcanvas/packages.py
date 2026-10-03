@@ -7,6 +7,8 @@ app only loads it after validation. See docs/subject-package.md for the schema.
 
 import json
 import re
+import os
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -447,11 +449,28 @@ class SubjectFiles:
             return None
 
     def save_package(self, subject_id: str, content: bytes) -> Path:
+        """Validate a candidate without replacing the last usable package on failure."""
         folder = self.subject_dir(subject_id)
         folder.mkdir(parents=True, exist_ok=True)
         path = self.package_path(subject_id)
-        path.write_bytes(content)
-        return path
+        candidate = None
+        try:
+            with tempfile.NamedTemporaryFile(dir=folder, prefix=".candidate-", suffix=".json", delete=False) as handle:
+                candidate = Path(handle.name)
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+            read_package(candidate, expected_id=subject_id)
+            candidate.replace(path)
+            return path
+        except PackageError:
+            # Keep a rejected candidate for correction without changing active content.
+            if candidate is not None:
+                candidate.replace(self._checked_path(folder / "rejected-package.json"))
+            raise
+        finally:
+            if candidate is not None and candidate.exists():
+                candidate.unlink()
 
     def load_package(self, subject_id: str) -> dict:
         """Describe the package state: missing, invalid (with issues), or valid (with content)."""

@@ -175,10 +175,10 @@ def test_subject_files_round_trip(tmp_path, demo_subject):
     assert brief_path.name == "brief.json"
     assert brief["name"] == "Statistics 101" and brief["target_score"] == 75
 
-    files.save_package(subject_id, json.dumps(demo_subject).encode("utf-8"))
-    status = files.load_package(subject_id)
-    assert status["state"] == "invalid"
-    assert status["issues"][0]["path"] == "$.id"
+    with pytest.raises(PackageError):
+        files.save_package(subject_id, json.dumps(demo_subject).encode("utf-8"))
+    assert files.load_package(subject_id)["state"] == "missing"
+    assert (files.subject_dir(subject_id) / "rejected-package.json").is_file()
 
     package = {**demo_subject, "id": subject_id}
     files.save_package(subject_id, json.dumps(package).encode("utf-8"))
@@ -250,3 +250,30 @@ def test_invalid_package_bytes_are_recoverable_and_preserved(tmp_path, content):
     with pytest.raises(PackageError):
         read_package(path)
     assert path.read_bytes() == content
+
+
+def test_rejected_upload_keeps_active_package(tmp_path, demo_subject):
+    files = SubjectFiles(tmp_path)
+    subject_id = demo_subject["id"]
+    original = json.dumps(demo_subject).encode()
+    files.save_package(subject_id, original)
+    with pytest.raises(PackageError):
+        files.save_package(subject_id, b'{"questions": 1}')
+    assert files.package_path(subject_id).read_bytes() == original
+    assert files.load_package(subject_id)["state"] == "valid"
+    assert (files.subject_dir(subject_id) / "rejected-package.json").read_bytes() == b'{"questions": 1}'
+
+
+def test_package_promotion_failure_keeps_active_package(tmp_path, demo_subject, monkeypatch):
+    from pathlib import Path
+    files = SubjectFiles(tmp_path)
+    subject_id = demo_subject["id"]
+    original = json.dumps(demo_subject).encode()
+    files.save_package(subject_id, original)
+    demo_subject["name"] = "Changed"
+    def fail_replace(*args):
+        raise OSError("synthetic promotion failure")
+    monkeypatch.setattr(Path, "replace", fail_replace)
+    with pytest.raises(OSError):
+        files.save_package(subject_id, json.dumps(demo_subject).encode())
+    assert files.package_path(subject_id).read_bytes() == original

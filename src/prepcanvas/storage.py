@@ -280,57 +280,75 @@ class StudyStore:
         return {"subject": subject, "profile": self.get_profile(subject_id), "attempts": attempts}
 
     def import_subject(self, payload: dict):
-        """Insert a subject exported by `export_subject`, always as a user subject."""
+        """Insert a complete payload in one transaction, including its profile."""
+        with self.import_transaction(payload):
+            pass
+
+    @contextmanager
+    def import_transaction(self, payload: dict, replace: bool = False):
+        """Keep changes uncommitted while the caller promotes staged files."""
         subject = payload["subject"]
         with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            existing = connection.execute("SELECT is_demo FROM subjects WHERE id = ?", (subject["id"],)).fetchone()
+            if existing:
+                if not replace or existing["is_demo"]:
+                    raise ValueError("The existing subject cannot be replaced.")
+                for table in ("attempts", "coaching_profiles", "subjects"):
+                    connection.execute(f"DELETE FROM {table} WHERE { 'id' if table == 'subjects' else 'subject_id'} = ?", (subject["id"],))
+            self._insert_import(connection, payload)
+            yield
+
+    def _insert_import(self, connection, payload: dict):
+        subject = payload["subject"]
+        connection.execute(
+            """
+            INSERT INTO subjects (id, name, description, exam_date, target_score, materials_json, is_demo, created_at, status)
+            VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+            """,
+            (
+                subject["id"],
+                subject["name"],
+                subject.get("description", ""),
+                subject.get("exam_date"),
+                subject.get("target_score", 80),
+                json.dumps(subject.get("materials", {})),
+                subject.get("created_at") or self._now(),
+                subject.get("status", "active"),
+            ),
+        )
+        for row in payload.get("attempts", []):
             connection.execute(
                 """
-                INSERT INTO subjects (id, name, description, exam_date, target_score, materials_json, is_demo, created_at, status)
-                VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+                INSERT INTO attempts (subject_id, mode, topic_id, question_id, score, max_score, is_answered,
+                                      confidence, created_at, sitting, exam_set, exam_variant,
+                                      time_limit_seconds, time_used_seconds)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     subject["id"],
-                    subject["name"],
-                    subject.get("description", ""),
-                    subject.get("exam_date"),
-                    subject.get("target_score", 80),
-                    json.dumps(subject.get("materials", {})),
-                    subject.get("created_at") or self._now(),
-                    subject.get("status", "active"),
+                    row["mode"],
+                    row.get("topic_id"),
+                    row.get("question_id"),
+                    row["score"],
+                    row["max_score"],
+                    int(row.get("is_answered", 1)),
+                    row.get("confidence"),
+                    row.get("created_at") or self._now(),
+                    row.get("sitting"),
+                    row.get("exam_set"),
+                    row.get("exam_variant"),
+                    row.get("time_limit_seconds"),
+                    row.get("time_used_seconds"),
                 ),
             )
-            for row in payload.get("attempts", []):
-                connection.execute(
-                    """
-                    INSERT INTO attempts (subject_id, mode, topic_id, question_id, score, max_score, is_answered,
-                                          confidence, created_at, sitting, exam_set, exam_variant,
-                                          time_limit_seconds, time_used_seconds)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        subject["id"],
-                        row["mode"],
-                        row.get("topic_id"),
-                        row.get("question_id"),
-                        row["score"],
-                        row["max_score"],
-                        int(row.get("is_answered", 1)),
-                        row.get("confidence"),
-                        row.get("created_at") or self._now(),
-                        row.get("sitting"),
-                        row.get("exam_set"),
-                        row.get("exam_variant"),
-                        row.get("time_limit_seconds"),
-                        row.get("time_used_seconds"),
-                    ),
-                )
         profile = payload.get("profile")
         if profile:
-            self.save_profile(
-                subject["id"],
-                {"id": profile["strategy_id"], "name": profile["strategy_name"], "description": profile["description"]},
-                profile["diagnostic_score"],
-                profile["confidence"],
+            connection.execute(
+                "INSERT INTO coaching_profiles (subject_id, strategy_id, strategy_name, description, "
+                "diagnostic_score, confidence, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (subject["id"], profile["strategy_id"], profile["strategy_name"], profile["description"],
+                 profile["diagnostic_score"], profile["confidence"], profile.get("updated_at") or self._now()),
             )
 
     def list_attempts(self, subject_id: str) -> list:

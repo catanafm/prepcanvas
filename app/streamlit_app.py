@@ -22,7 +22,7 @@ from prepcanvas.coaching import recommend_strategy
 from prepcanvas.exams import available_sets, default_duration, describe, exam_questions, format_duration, next_variant, time_status
 from prepcanvas.grading import grade_question, grade_questions
 from prepcanvas.library import exam_countdown, group_subjects, last_activity
-from prepcanvas.packages import MATERIAL_SUFFIXES, SubjectFiles, content_summary
+from prepcanvas.packages import MATERIAL_SUFFIXES, PackageError, SubjectFiles, content_summary
 from prepcanvas.practice import next_question, question_status, random_question, remaining
 from prepcanvas.prompts import SKILL_NAME, agent_request, chat_prompt, display_path
 from prepcanvas.readiness import calculate_readiness, next_best_action
@@ -534,9 +534,16 @@ def render_build_section(item: dict, materials: list, content: dict):
             if package_upload is None:
                 st.warning("Choose the package.json file first.")
             else:
-                files.save_package(item["id"], package_upload.getvalue())
-                st.session_state["flash"] = "Package imported. Check the validation result below."
-                st.rerun()
+                try:
+                    files.save_package(item["id"], package_upload.getvalue())
+                except PackageError as error:
+                    st.error("Package rejected. Your previous content is unchanged; the candidate is saved as rejected-package.json.")
+                    render_issues(error.issues)
+                except OSError:
+                    st.error("Could not save the package. Your previous content is unchanged. Check disk space and permissions, then retry.")
+                else:
+                    st.session_state["flash"] = "Package validated and imported."
+                    st.rerun()
     with manual_tab:
         st.markdown(
             f"Write `{display_path(files.package_path(item['id']))}` yourself, following "
